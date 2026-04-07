@@ -12,7 +12,7 @@
 
 > **PactKit** is a governance framework that enforces the **P.A.C.T.** contract between humans and AI coding agents. Deterministic operations run as code, not prompts. Decisions are grounded in data, not memory. AI does what it's best at — creativity and language — while code handles everything that must be repeatable and correct.
 >
-> 25 CLI subcommands, 9 specialized agents, 11 commands, 10 skills, and a full Plan-Act-Check-Done lifecycle. One `pip install` and your AI assistant follows the contract.
+> 28 CLI subcommands, 9 specialized agents, 11 commands, 10 skills, and a full Plan-Act-Check-Done lifecycle. One `pip install` and your AI assistant follows the contract.
 
 ## Installation
 
@@ -26,8 +26,12 @@ Requires Python 3.10+.
 
 | Tool | Deploy Command |
 |------|----------------|
-| [Claude Code](https://docs.anthropic.com/en/docs/claude-code) | `pactkit init` |
+| [Claude Code](https://docs.anthropic.com/en/docs/claude-code) | `pactkit init --format classic` |
 | [OpenCode](https://opencode.ai) | `pactkit init --format opencode` |
+| [Codex CLI](https://github.com/openai/codex) | `pactkit init --format codex` |
+| [GitHub Copilot](https://github.com/features/copilot) | `pactkit init --format copilot` |
+
+> `pactkit init` deploys all installed IDE formats by default. Use `--format` to target a specific one.
 
 ## Quick Start
 
@@ -61,7 +65,8 @@ PactKit deploys a complete PDCA (Plan-Do-Check-Act) lifecycle into your AI codin
 - **9 specialized agents** — System Architect, Senior Developer, QA Engineer, Security Auditor, and more
 - **11 command playbooks** — From `/project-init` to `/project-release`, each with quality gates
 - **10 skills** — Code visualization, sprint board management, scaffolding, and more
-- **25 CLI subcommands** — Deterministic operations enforced in Python code, not prompts
+- **28 CLI subcommands** — Deterministic operations enforced in Python code, not prompts
+- **4 IDE support** — Claude Code, OpenCode, Codex CLI, GitHub Copilot — deploy all at once or pick one
 - **Safe regression** — TDD-first, pre-existing test protection, spec-driven development
 
 ## The P.A.C.T. Contract

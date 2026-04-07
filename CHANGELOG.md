@@ -4,6 +4,59 @@ All notable changes to PactKit will be documented in this file.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [2.9.12] - 2026-04-01
+
+### Added
+- **GitHub Copilot adapter** — `pactkit init --format copilot` deploys skills, commands, agents, and `copilot-instructions.md` to `.github/`.
+- **Multi-stack auto-detection** — `pactkit init` auto-detects multiple stacks (e.g. `stack: [python, typescript]`).
+- **Module-level architecture graph** — `pactkit visualize --mode module` generates dimension-based subgraphs.
+
+## [2.9.0] - 2026-03-28
+
+### Added
+- **All-IDE default deployment** — `pactkit init` now deploys Claude Code + OpenCode + Codex configs in one shot by default. No need to specify `--format` per IDE.
+
+### Fixed
+- **Entry-point deployer circular import** — Lazy-load adapter deployers to fix `ValueError` when running via pipx.
+
+## [2.8.0] - 2026-03-27
+
+### Added
+- **3-IDE default install** — `pip install pactkit` now installs all three IDE adapters (Claude Code + OpenCode + Codex) out of the box.
+
+### Changed
+- **Cross-IDE command architecture** — Claude Code uses skills-only, OpenCode uses commands + skills, Codex uses skills-only with `$` prefix.
+
+## [2.7.0] - 2026-03-27
+
+### Added
+- **Commands → Skills migration** — 11 PDCA commands now deploy as `skills/{name}/SKILL.md` for Claude Code format. Legacy command files auto-removed on upgrade.
+- **Codex FormatProfile** — Re-added `codex` profile for thin adapter pattern support.
+
+## [2.6.0] - 2026-03-26
+
+### Added
+- **Plugin adapter architecture** — `DeployerProtocol` and `DeployerBase` with registry pattern (`register_deployer()`). New IDE formats can be added as standalone pip packages via `entry_points`.
+- **pactkit-opencode adapter** — OpenCode deployer extracted into standalone `pactkit-opencode` package.
+
+## [2.5.0] - 2026-03-26
+
+### Added
+- **100% E2E CLI coverage** — 60 subprocess-based tests covering all CLI subcommands.
+- **`python -m pactkit`** — Module entry point support.
+
+### Fixed
+- **Robustness sweep** — Atomic file writes for `.mmd` and `pactkit.yaml`, O(1) callee resolution, large file OOM guard (1MB limit), Windows encoding compatibility.
+
+## [2.4.1] - 2026-03-26
+
+### Added
+- **Automated PyPI Publish** — GitHub Actions workflow triggers on `v*` tags with trusted publisher (OIDC).
+- **Board `move_story` command** — Move stories between Backlog/In Progress/Done sections.
+
+### Changed
+- **Closed-source migration** — Source repo moved to private; public entry point at `pactkit/pactkit-public`.
+
 ## [2.4.0] - 2026-03-25
 
 ### Added
