@@ -1,61 +1,451 @@
 # Changelog
 
+## [2.23.0] - 2026-08-27
+
+### Added
+- **Spec preflight + native sessions** — `/project-act` Phase 0.7 deterministically inlines the Spec's referenced implementation inputs and constraints (with receipts) before any source edit; prose basenames resolving to table-declared paths no longer double-add; oversized prose references downgrade to WARN instead of aborting; native session execution restored.
+- **Progressive PDCA rule loading** — the 16 on-demand rules load on trigger instead of always; every rule now states its specific trigger and evidence (doctor no longer prints generic "when referenced" boilerplate); the on-demand set is enumerated per-format in pactkit.yaml `rules:`.
+- **Unified deployment ownership safety** — the manifest-hash ownership proof (previously rules/guides only) now covers skills, command prompts, agents, CLAUDE.md and rollback: deletions require manifest proof, user-modified files are preserved as `.pactkit-new` candidates, Ctrl-C rolls back atomically, and bare adapter calls fail safe.
+- **Machine-checked prompt-to-CLI consistency** — every `pactkit <subcommand>` reference in prompts/ must be a registered CLI subcommand (drift fails CI instead of failing an AI mid-session); mid-story task additions get a governed `add_task` path that reopens a done story.
+- **Legacy-engine usage counter** — machine-local counter (`~/.pactkit/legacy-engine-usage.json`) on the three explicit legacy entry points; `pactkit doctor` surfaces the invocation count that gates the frozen legacy package's deletion decision.
+
+### Fixed
+- **Gates fail closed** — pip-audit verdicts parsed correctly (vulnerabilities no longer read as pass), word-boundary requirement/test identity matching (R1 no longer satisfied by R10), coverage probe failures and "block" verdicts actually block, commit-gate git-collection failure is an error rather than a doc-only skip, config path arguments no longer silently swallowed.
+- **No bricked runs** — a vanished artifact fails with `artifact_vanished` instead of bricking the run forever; corrupt unrelated run files are skipped with a warning while matching runs still fail closed; Windows engine mutations no longer crash on the fcntl import; cross-run story binding serialized.
+- **pactkit.yaml multi-copy sync** — syncs from the copy readers actually load (user edits to the loaded copy were silently destroyed on every update) and writes atomically.
+- **Superseded-constitution warning** — machines still carrying the pre-slim-112 constitution alongside the Runtime Kernel get an explicit retirement warning instead of two conflicting governance layers silently co-loading.
+- **Prompts off the legacy surface** — /project-act and /project-plan no longer instruct agents to invoke the deprecated `continuation`/checkpoint commands (self-inflicted counter noise would keep the legacy deletion gate open forever); handover notes use the maintained `pactkit context --continuation` mechanism.
+- **Publish workflow unblocked** — the release test job installs `.[visualize,lint]` instead of `.[all]` (adapter extras are unresolvable before adapters publish — core-first order); five stale test deselects removed after their flakiness was fixed.
+
+### Changed
+- **Shared deploy-arg builder + golden-pinned CLI surface** — init/update/upgrade share one argument builder; the full argparse surface is pinned byte-for-byte by a golden help-snapshot test; dead `generators/adapter.py` removed; doctor's project deploy directories derive from FORMAT_PROFILES.
+
+### Removed
+- **Preflight guard** (the PreToolUse mutation-enforcement hook): freshness-only
+  checking, one-shot binding, and warn-by-default gave it near-zero enforcement
+  value while producing hook noise during Act sessions. The Spec preflight
+  LOADER (deterministic input inlining + receipts) is kept in full. The
+  `pactkit preflight-guard` subcommand and `spec-preflight --activate` are gone;
+  Act playbooks updated. (HOTFIX 2026-08-26)
+
+### Deprecated
+- Legacy workflow engine (`pactkit workflow` / `work-unit` / explicit `continuation`
+  subcommands) moved to the frozen `pactkit.legacy` package — deletion candidate.
+  Removal is gated on one release cycle of zero explicit invocations; run
+  `pactkit doctor` to see your machine's invocation count. Public import paths
+  (`pactkit.workflow_engine`, `pactkit.host_continuation`) keep working via
+  compatibility shims. Default PDCA execution paths are unaffected.
+
 All notable changes to PactKit will be documented in this file.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [Withdrawn] - 2.21.0 / 2.22.0 - 2026-08-27
+
+- **v2.21.0 and v2.22.0 were withdrawn from PyPI.** Both were published on
+  2026-08-24 and deliberately removed shortly afterwards due to serious
+  defects: workflow runs could brick mid-flight, gates failed open (including
+  an inverted pip-audit verdict), and the preflight guard hook produced noise
+  during Act sessions. All of these are fixed in [Unreleased] and will ship in
+  2.23.0.
+- `pactkit-codex` 2.21.0 was withdrawn alongside. `pactkit-opencode` and
+  `pactkit-copilot` never published 2.21/2.22 — all adapter packages remain at
+  2.20.0 on PyPI.
+- **Guidance:** pin `pactkit==2.20.0` until 2.23.0 is available. Git tags
+  v2.21.0/v2.22.0 and their GitHub Releases remain as historical record.
+
+## [2.22.0] - 2026-08-24
+
+### Added
+- **Unified WorkUnit scope derivation for non-standard directory layouts** — WorkUnit read/write scope is no longer a hardcoded `src/**`|`tests/**` whitelist. A `resolve_scope` SSoT unions each unit's frozen template floor with project-declared `write_scope` roots (`source_roots`/`test_roots`/`docs_roots`) and the Spec's `Touches`, so projects with `frontend/src/`, `backend/`, `directus-extensions/` layouts no longer block `project-act`/`project-hotfix`. Union (not intersection): the Spec (Tier-1) is never clipped by mutable config. `spec_linter` rejects pathological `Touches` (`**`, absolute, `..`); runtime path-escape stays in `_safe_repo_path`.
+
+### Fixed
+- **Completed runs survive legitimate cross-workflow projection evolution** — after Plan → Act, `project-check`/`project-done` start and `pactkit work-unit status <plan-run>` no longer crash with `invalid_workflow_state`. `_completed_run_for_story` scans sibling journals leniently (existence lookups don't re-validate projection fingerprints), and `finalize-workflow` regenerates `context.md` to the post-completion canonical. Execution reads (`_read`) stay strict, so genuine tampering is still detected.
+
+## [2.21.0] - 2026-08-24
+
+### Added
+- **Core-owned lifecycle WorkUnits for every project command** — all 12 `project-*` entry points now run through a versioned Core scheduler with bounded leases, deterministic EvidenceReceipts, durable ExecutionAttempts, command-specific validators, and journaled completion. Plan, Act, Check, Done, Sprint, Init, Hotfix, Design, Clarify, Debug, Release, and PR share one completion authority instead of relying on model prose.
+- **Official Codex App Server execution bridge** — `pactkit-codex-work-unit` starts and resumes persisted App Server threads, requests schema-constrained results, retries malformed or out-of-scope receipts without losing workflow state, and supports cross-process `thread/resume`.
+- **Resumable Codex capability contract** — deployment manifests and `pactkit doctor` now report the verified `resumable` guarantee independently of weaker project-local hosts, while retaining per-host capability details.
+
+### Changed
+- **Act completion is Core-governed** — RED must fail, GREEN must pass, regression/lint/coverage must be accepted, and canonical Story tasks plus the Board projection are completed by an idempotent `validated → governance → completed` finalizer with crash recovery and tamper detection.
+- **Explicit side-effect authorization** — commit, push, pull request, tag, publish, release, and Sprint orchestration pause as `await_user` before a model turn unless the exact operation was authorized.
+- **Distributed IDs** — removed the sequential `next-id` command; `pactkit generate-id` creates time-prefixed, collision-resistant Story, Hotfix, and Bug IDs without a shared counter.
+
+### Fixed
+- **Premature Codex termination** — an agent response can no longer mark a workflow complete; only Core's finish guard and journaled finalizer can return `done`. Artifact drift, lease expiry, malformed model output, and process restarts fail closed into a recoverable retry.
+- **Cross-host deployment parity** — all managed command facades consume the same lifecycle contract, OpenCode no longer receives Claude-only skill paths, and Sprint has a serialized Plan → Act → Check → Done fallback where native orchestration is unavailable.
+
+## [2.20.0] - 2026-08-22
+
+### Added
+- **Verified resumable Act checkpoints** (STORY-slim-146) — PactKit now persists Story-scoped continuation state with validated Spec, Board, test, regression, and lint evidence. `pactkit continuation status/verify/resume/checkpoint` supports safe cross-process recovery, stale-state detection, terminal completion, fresh-cycle archival, secret/path sanitization, and Story-level locking. All 13 runtime skills and the Classic, OpenCode, Codex, and Copilot deployments share the recovery contract.
+
+### Fixed
+- **Adapter-safe command rendering and deployment gates** (STORY-slim-145) — operation-aware prompt rendering preserves PactKit CLI semantics across adapters, rejects lossy command transformations, checks generated prompt integrity before writing, and blocks incompatible Core/adapter versions unless skew is explicitly acknowledged.
+
+## [2.19.0] - 2026-08-17
+
+### Added
+- **Spec Dependency Surface** (STORY-slim-143) — every scaffolded Spec now carries a machine-readable `## Dependency Surface` table (`Depends on` / `Provides` / `Touches` / `Conflict risk`). Story dependencies and file-level conflict surface are no longer implicit in the architect's head — they're data.
+- **`pactkit spec-graph`** (STORY-slim-143) — deterministic story dependency DAG from all Specs: topological **execution waves** (wave N depends only on waves < N; same-wave stories are parallelizable), a **file-overlap conflict matrix** (same-wave overlaps flagged unsafe-parallel), cycle detection with non-zero exit, and Mermaid output to `docs/architecture/graphs/story_graph.mmd`. Stdlib only (`graphlib`, `fnmatch`), zero new dependencies.
+- **Spec linter rules E010/W011** (STORY-slim-143) — dangling `Depends on` references (story ID with no Spec file) are now an Act-blocking ERROR; missing Dependency Surface is a WARNING. Reuses spec_linter's section-parsing helpers (newly public: `strip_code_blocks` / `section_text`).
+- **Sprint Wave Mode** (STORY-slim-144) — `/project-sprint` with empty arguments scans the backlog, consumes `pactkit spec-graph --json` (new flag), and runs conflict-free same-wave stories as parallel worktree subagents (cap `sprint.max_parallel`, default 3). Stories with same-wave conflicts or undeclared Touches are serialized safe-by-default. Wave gate: wave N+1 starts only after wave N is fully merged green; fail-fast with no auto-retry; resume by re-running (idempotent). Single-story mode with arguments is byte-for-byte unchanged.
+- **Plan playbook Dependency Surface step** (STORY-slim-143) — `/project-plan` Phase 3.2a now fills the table from Phase 1 trace findings, so every new Spec ships scheduling data.
+
+## [2.18.0] - 2026-08-17
+
+### Added
+- **Deployment manifest content hashes** (STORY-slim-141) — `write_deploy_manifest` now records a per-file sha256 under a `files` field (skills/commands-as-skills/agents/managed rules/guides; merge-semantics files like `CLAUDE.md` and user configs are structurally excluded). `pactkit doctor` deepens the parity check from component-name lists to content level: hash mismatch or missing-on-disk becomes an explicit `Content drift:` report, so "version stamp says new, content is old" deployments can no longer pass silently. Pre-2.18 manifests degrade to a warning; unreadable files and corrupted `files` fields degrade per SEC-7 and never crash doctor. Manifest keys are POSIX-normalized for cross-platform consistency.
+- **Adapter version skew warning in doctor** (STORY-slim-142) — doctor now reads adapter package metadata (`pactkit-opencode` etc.) and warns when an installed adapter lags behind core, with a `pipx inject` upgrade hint. The manifest's version field is core-stamped and could never reveal adapter skew.
+
+### Fixed
+- **`deploy(format="all", target=...)` no longer deploys adapters** (STORY-slim-142) — adapter deployers cannot honor `-t` and previously always wrote into real home dirs, which let test-suite or preview `init` calls silently overwrite live deployments (root cause of repeated `~/.config/opencode` stale-content incidents). With an explicit target, adapters are skipped with a printed notice; `target=None` behavior is unchanged.
+
+## [2.17.0] - 2026-08-13
+
+### Added
+- **`pactkit done-verify`** (STORY-slim-136) — Mechanical archive-honesty gate for `/project-done`. Verifies requirement→test evidence chains, checkbox↔case-file consistency (with code-span stripping), zero-production-caller components (WARN), and Spec/Board/archive status consistency. Any FAIL blocks archiving and commit (exit 1). Wired into project-done Phase 3 as a mandatory step.
+- **`pactkit commit-gate`** (STORY-slim-138, STORY-slim-140) — Pre-commit test gate with skip≠pass transparency (passed/failed/skipped reported separately; skips always listed). Two channels sharing one pipeline: Claude Code PreToolUse hook (auto-installed into `.claude/settings.json` by init/update) and git pre-commit (auto-installed for non-Claude formats). Self-lock protection: gate-internal failures always allow with a loud WARN. Direct commits on main/master/develop force the full unit suite.
+- **`pactkit deps check/install`** (STORY-slim-137) — External dependency registry (node/codegraph/gh) with platform-aware guided install. `pactkit init` CLI only reports (CI/air-gap safe); `/project-init` Phase 1.5 asks before installing. `enterprise.no_external` refuses installs.
+- **`pactkit schema config`** (STORY-slim-135) — Discoverability report for every pactkit.yaml key: default, effective value, and source file.
+- **Deployment parity check in `pactkit doctor`** (STORY-slim-139) — Every deploy writes `.pactkit-deployed.json`; doctor compares per-format manifests against the registry and FormatProfile capability matrix, turning silent deployment drift into explicit `Deployed drift:` reports.
+
+### Changed
+- **Schema-driven pactkit.yaml** (STORY-slim-135) — `CONFIG_SCHEMA` is now the single source for defaults, validation, deep-merge behavior, and rendering. Fresh `pactkit init` writes a minimal yaml (stack + developer only) instead of a 94-line default wall; absent keys resolve through defaults. Multi-copy sync keeps `.claude`/`.codex`/`.github`/`.opencode` copies identical (canonical = `.claude` first); doctor reports copy drift.
+- **Skill deployment single source** (STORY-slim-139) — `SKILL_MANIFEST` + public `get_skill_manifest()` contract; codex/copilot adapters consume it (restoring pactkit-garden/audit/report which a stale hardcoded list had silently dropped), opencode already conformant.
+- **Rule map migration** — `COMMAND_RULES_MAP` keys migrated to the merged `pactkit` rule file; inline embedding no longer duplicates globally-loaded constitution content per command.
+
+### Fixed
+- **Codex adapter never touches an existing `config.toml`** — after two wipe incidents (custom TOML writer stringified arrays; parse-failure path rewrote managed-only content), the policy is now create-if-absent only. Existing files stay byte-identical.
+- **OpenCode global instructions** — the merge logic no longer strips `rules/pactkit.md` from the always-load layer.
+- **`install_git_hook` idempotency** — re-running no longer clobbers chained third-party pre-commit hooks.
+- **Config copy precedence incident** — canonical selection uses explicit preference order, not key-count heuristics (an inflated default-wall copy could otherwise overwrite hand-curated config).
+
+## [2.16.1] - 2026-07-23
+
+### Fixed
+- **Bedrock VS Code plugin model compatibility** (STORY-slim-134) — Removed `model:` field from all `/project-*` command frontmatter. Claude Code was resolving `model: sonnet/opus` to Anthropic's latest model ID (e.g., `us.anthropic.claude-sonnet-4-5-20250929-v1:0`), bypassing `ANTHROPIC_DEFAULT_SONNET_MODEL` env var in VS Code plugin environments. Commands now inherit the session default model set by the user's provider env vars.
+
+## [2.16.0] - 2026-07-13
+
+### Added
+- **`/project-debug` command** (STORY-slim-133) — Hypothesis-driven troubleshooting skill. Structured loop: Symptom → Hypothesize (≤3) → Verify (executable commands) → Narrow → Root Cause. Enforces evidence-gated file access (no aimless reading) and convergence guarantees (escalates to `/project-plan` if stuck after 3 iterations). Uses sonnet model with structured protocol.
+
+## [2.15.2] - 2026-07-02
+
+### Changed
+- **Codegraph commands decoupled from prompts** (STORY-slim-132) — Replaced hardcoded codegraph CLI command lists with runtime `codegraph --help` discovery. PactKit no longer needs updates when codegraph changes its command signatures.
+
+### Fixed
+- **Act Phase 0.6 board move command** (HOTFIX-slim-132) — Added explicit `board.py move_story` command template to prevent AI from guessing wrong subcommand syntax.
+- **Prompt deployer** (HOTFIX-slim-131) — Insert @ references after YAML frontmatter so model: field is parsed correctly.
+- **Skill frontmatter** (HOTFIX-slim-130) — Move @ references below YAML frontmatter in project-* skills.
+
+### Refactored
+- **Prompt rules** — Moved large rules from @inject to on-demand Read to reduce initial context size.
+
+## [2.15.1] - 2026-06-10
+
+### Added
+- **Engineering Concerns guide system** (STORY-slim-128) — On-demand NFR guide loading via trigger index. Plan Phase 2 scans requirement keywords and includes NFR decisions in Spec; Act Phase 1.5 loads matched guides (1-3 max). Initial 13 concerns: concurrency, async, configuration, observability, module-design, database, caching, api-integration, event-driven, resilience, memory-management, code-review-first, component-reuse.
+- **6 additional engineering guides** (STORY-slim-129) — error-recovery (retry/backoff/idempotency), data-consistency (transactions/saga/optimistic lock), backwards-compatibility (API versioning/non-breaking migration), performance-antipatterns (N+1/unbounded queries/indexing), graceful-shutdown (SIGTERM/drain/cleanup order), testing-strategy (boundary/mock vs real/isolation). Total: 19 guides.
+
+### Fixed
+- **Spec linter** — Accept heading format for Security Scope `SEC-*` entries.
+- **CI** — Remove obsolete `.opencode/pactkit.yaml` test.
+
+## [2.15.0] - 2026-06-04
+
+### Added
+- **`lint` optional dependency group** — `pip install pactkit[lint]` now includes `ruff>=0.4`. The `all` extra also includes `lint`. Users no longer need to install ruff separately for the lint gate to work.
+- **External tools documentation** — README and pactkit.dev installation pages now document recommended external tools (gh, codegraph) with install commands and fallback behavior.
+
+### Fixed
+- **CI: tree-sitter tests skip when not installed** — `test_story_slim032`, `test_story_slim033`, `test_story_slim034` now use `pytest.importorskip("tree_sitter")` so they skip gracefully in CI environments without the `visualize` extra.
+
+## [2.14.2] - 2026-06-01
+
+### Added
+- **Managed-block update for project CLAUDE.md** (STORY-slim-127) — `pactkit update` now uses `<!-- pactkit:start -->` / `<!-- pactkit:end -->` markers. User content outside the managed block is preserved across updates. Supports four migration paths: fresh install, existing markers, legacy PactKit template, and user-modified files.
+- **Codegraph sync enforcement via code** (STORY-slim-126) — `pactkit visualize --lazy` and `pactkit sync` now run `codegraph sync` automatically when `.codegraph/` exists. Removed prompt-based instructions that relied on AI compliance.
+- **Codegraph priority in generated CLAUDE.md** — When `.codegraph/` exists, the generated project CLAUDE.md includes a "Code Intelligence" section instructing AI to prefer codegraph over grep/find.
+
+### Changed
+- **MCP strategy trimmed to Context7 + Memory** — Removed Playwright, Chrome DevTools, Draw.io, and shadcn from MCP rules and recommendations. These remain as conditional no-ops in command prompts but are no longer actively promoted.
+- **Config backfill removed** — `pactkit update` no longer backfills default sections into `pactkit.yaml`. Absent keys now mean "accept default", keeping config files minimal.
+
+### Fixed
+- **Stale rule warnings** — Removed obsolete rule names from `.opencode/pactkit.yaml` that caused "Unknown rule" warnings on every `pactkit update`.
+
+## [2.14.1] - 2026-05-28
+
+### Fixed
+- **Codegraph sync missing from project-done and project-hotfix** (HOTFIX-slim-127) — STORY-slim-124 added `codegraph sync` to project-act but missed project-done (Phase 2) and project-hotfix. Workflows bypassing project-act left the codegraph index stale. Fixed in source templates (`commands.py`, `workflows.py`); next `pactkit init` deploy propagates the fix to all users.
+
+## [2.14.0] - 2026-05-26
+
+### Added
+- **Codegraph integration** (STORY-slim-124) — `pactkit query` now reads from `.codegraph/codegraph.db` (generated by `@colbymchenry/codegraph`) when `visualize.graph_provider: codegraph` is configured. Provides 2.6x more edges than pactkit's own suffix-match resolution (6580 vs 2483 in real projects), with qualified names, line numbers, and type-aware resolution.
+- **Auto-init codegraph** — When `graph_provider: codegraph` is set and `.codegraph/codegraph.db` is missing, `pactkit query` auto-runs `codegraph init -i` if the CLI is on PATH. Plan/Act phases also auto-setup codegraph when detected.
+- **Graph Query Protocol dual-mode** — PDCA commands now support two modes: Codegraph Mode (`pactkit query` + codegraph CLI + MCP tools) and Grep Mode (default fallback on `.mmd` files).
+
+### Removed
+- **`_write_sqlite_db()`** — Pactkit no longer generates its own `call_graph.db`. The upstream codegraph tool produces a superior graph with tree-sitter + import-aware resolution.
+- **`visualize.sqlite_output` config** — Replaced by `visualize.graph_provider: codegraph`. Existing configs should migrate.
+
+### Changed
+- **`pactkit query`** — Now reads `.codegraph/codegraph.db` (codegraph schema with hash IDs, JOIN edges+nodes) instead of pactkit's own `call_graph.db`.
+- **PDCA prompts updated** — All references to `call_graph.db` / "SQLite Mode" removed from Plan, Act, Check, Done, Hotfix, and Trace skills. Impact analysis uses `pactkit query --callers` (codegraph) or grep `.mmd` (default).
+
+## [2.13.0] - 2026-05-25
+
+### Added
+- **Call graph SQLite output** (STORY-slim-121) — `pactkit visualize --mode call` now optionally writes `call_graph.db` alongside the existing `.mmd` file. Enable via `visualize.sqlite_output: true` in `pactkit.yaml`. Atomic write (tmp+rename), zero new dependencies (`sqlite3` stdlib).
+- **`pactkit query` CLI** (STORY-slim-121) — New subcommand for structured call graph queries: `--callers <func>` (fan-in), `--callees <func>` (fan-out), `--chain <func> [--down]` (transitive upstream/downstream via recursive CTE). Reads from `call_graph.db`; exits with helpful message when db is missing.
+- **Graph Query Protocol upgrade** (STORY-slim-121) — `SKILL_VISUALIZE_MD` now routes to `pactkit query` as primary path when `call_graph.db` exists, with grep as fallback for mmd-only projects.
+- **Enhanced Python call graph coverage** (STORY-slim-119) — `_extract_calls` now captures non-self attribute calls (`engine.run()`), function references in list/tuple/keyword/assign contexts, and nested functions via `ast.walk` + parent map. Edge count on medium-large projects: 1,360 → 3,764 (+177%).
+- **Test and script scanning in call graph** (STORY-slim-120) — `visualize --mode call` now scans `tests/`, `scripts/`, and `alembic/` directories in addition to `src/`. Locality-based `_resolve_callee` prefers same-file/same-package candidates when multiple matches exist.
+- **`pactkit interface-summary` CLI** (STORY-slim-113) — AST-based interface extraction that physically outputs only signatures, types, and docstrings. Enforces "Code Enforces, Prompt Instructs" for Act Phase 1 layered loading — AI receives truncated content by design.
+- **Journey Sync in Act Phase 4** (STORY-slim-114) — Conditional step that updates `docs/e2e/journey.md` when a Story modifies journey-relevant steps. Closes the create→consume→update lifecycle gap.
+- **Journey Segment in Plan Phase 3.2a** (STORY-slim-114) — Conditional Spec annotation that links Stories to journey steps, enabling Act Phase 4 auto-detection.
+
+## [2.12.0] - 2026-05-06
+
+### Changed
+- **Rules architecture refactor** (STORY-slim-112) — Merged 6 global core rules into single `pactkit.md`; on-demand rules renumbered 01-06 and moved to `~/.claude/skills/_rules/`. Reduces context window usage by ~60% per conversation.
+- **Auto-deploy on version mismatch** — After `pipx upgrade pactkit`, the next CLI command auto-syncs deployed files without requiring explicit `pactkit init`.
+
+### Fixed
+- **Hardcoded paths in deployer** — `_build_command_rules_header()` now uses `FormatProfile.rules_dir` / `skills_dir` instead of hardcoded `~/.claude/` paths.
+- **Stale filename references** — Updated cross-references in visualize.py, commands.py, lazy_visualize.py, and test files to match new rule filenames.
+
+## [2.11.0] - 2026-04-25
+
+### Added
+- **Lateral Scan** (STORY-slim-106) — Plan Phase 1 now scans for duplicate patterns before writing Specs. If overlap > 30% with existing implementations, Spec must include `R0: Extract shared abstraction` or declare tech debt accepted. Removed dead hooks code from rules.
+- **DEFERRED comment mechanism** (STORY-slim-105) — When skipping a SHOULD requirement, code must include `# DEFERRED(SHOULD): R{N} — reason` comment. Coverage table output added to Check phase for tracking deferred items.
+
+### Fixed
+- **Residual pactkit.yaml version operations** (HOTFIX-slim-107) — Removed `update_version()` function and CLI subcommand from board.py, plus all stale references in prompts, agents, and skills docs. Version is now exclusively managed in pyproject.toml + __init__.py with deploy marker at ~/.claude/.pactkit-version.
+- **CI tree-sitter deps** — Install tree-sitter optional dependencies in CI workflow to prevent import failures.
+
+## [2.10.6] - 2026-04-22
+
+### Fixed
+- **L3 SHOULD semantics** (STORY-slim-104) — Signal Strength Convention L3 Recommended changed from "Violation = warning, non-blocking" to "Default required — skip only with stated reason" (RFC 2119). Added clarification bullet that SHOULD is not optional. Prevents AI from systematically deferring SHOULD tasks.
+
+## [2.10.5] - 2026-04-21
+
+### Added
+- **Solution Design Protocol** (STORY-slim-101) — New rule `12-solution-design.md` requires capability delta assessment before implementation. Prevents framework blindness, project blindness, and hardcoded coupling. Includes Implementation Constraints (no magic values, OCP, SRP, dependency direction). Integrated into Plan Phase 1 and Act Phase 1.
+
+### Changed
+- **Global version tracking** (STORY-slim-102) — Version tracking moved from project-level `pactkit.yaml` to global `~/.claude/.pactkit-version` marker. Eliminates cross-project desync when PactKit is upgraded. `auto_merge_config_file()` now removes stale `version` field from existing project yamls.
+
+## [2.10.4] - 2026-04-20
+
+### Added
+- **Hotfix Impact Check** (STORY-slim-100) — `/project-hotfix` now includes Phase 0.5 that reads existing `.mmd` call graph files before fixing. Warns when target function has 3+ callers. Advisory (L3), non-blocking, gracefully skips when no graphs exist.
+
+## [2.10.3] - 2026-04-20
+
+### Fixed
+- **Protected parent dirs in `pactkit clean`** — `rglob("dist")` was matching `node_modules/*/dist`, destroying npm dependency internals. Added `_inside_protected()` guard for `node_modules/` and `.git/`; explicit path patterns (e.g., `node_modules/.cache`) now use direct matching instead of rglob.
+
+## [2.10.2] - 2026-04-20
+
+### Added
+- **PDCA Nudge Protocol** (STORY-slim-098) — AI proactively recommends PDCA commands when free conversation yields actionable conclusions. Trigger matrix maps signals to commands; suppression rules prevent noise.
+
+### Fixed
+- **Shared Protocols Context.md reference** (STORY-slim-099) — Added missing `Act Phase 4` to the Context.md Canonical Format "Referenced by" line. Ensures context.md reflects Act progress for session continuity.
+- **Semantic version comparison** (HOTFIX-slim-099) — Version mismatch warning now uses tuple comparison instead of string equality, giving correct upgrade/downgrade direction.
+
+## [2.10.1] - 2026-04-16
+
+### Added
+- **Dual-dimension Harness Audit** (STORY-slim-097) — Audit now scores two dimensions: Config (project + global `~/.claude/` config, 50pts) and Code (tests, lint, complexity, git hygiene, 50pts). Score went from 52 to 97/100 for PactKit itself. JSON output includes `dimensions` breakdown field.
+- **Unified HTML Report Dashboard** (STORY-slim-094) — Single `report.html` with tab switching, D3 force-directed graph, harness score ring, layer bars, and hotspot panel. Self-contained offline HTML with inline D3.js.
+
+### Fixed
+- **Focus call graph empty output** (STORY-slim-095) — Fixed focus resolution to use `LANG_PROFILES[stack].source_dirs` instead of hardcoded `src/` prefix. Added subdirectory and single-root-module fallback.
+- **Report --all tab overload** (HOTFIX-slim-096) — Filtered unified dashboard to core PDCA graphs only (code_graph, class_graph, call_graph, system_design). Reduced from 9 tabs to 4.
+- **Mermaid `<br/>` tag rendering** (HOTFIX-slim-096) — Strip Mermaid `<br/>` tags from node labels before HTML escape, preventing `&lt;br/&gt;` raw text in SVG.
+
+## [2.9.13] - 2026-04-15
+
+### Fixed
+- **Slim core dependencies** (STORY-slim-088) — Moved adapter packages (`pactkit-opencode`, `pactkit-codex`) and tree-sitter bindings to `[project.optional-dependencies]`. Core `pip install pactkit` now only requires `pyyaml`. Install extras with `pip install pactkit[all]`, `pactkit[visualize]`, `pactkit[opencode]`, or `pactkit[codex]`.
+- **Spec-lint CLI fallback** (STORY-slim-088) — Playbooks now include `python3 -m pactkit spec-lint` fallback for environments where `pactkit` is not on `$PATH`, preventing P.A.C.T. violation (AI "manual lint" replacing deterministic code validation).
+- **Board add_story signature** (STORY-slim-088) — Plan playbook Phase 3.3 now shows complete `add_story` invocation with required ID, title, and tasks arguments.
+
 ## [2.9.12] - 2026-04-01
 
 ### Added
-- **GitHub Copilot adapter** — `pactkit init --format copilot` deploys skills, commands, agents, and `copilot-instructions.md` to `.github/`.
-- **Multi-stack auto-detection** — `pactkit init` auto-detects multiple stacks (e.g. `stack: [python, typescript]`).
-- **Module-level architecture graph** — `pactkit visualize --mode module` generates dimension-based subgraphs.
+- **Copilot deployer adapter** (STORY-slim-083) — `pactkit-copilot` adapter package registered via entry_points. `pactkit update --format copilot` deploys skills, commands, agents, and `copilot-instructions.md` to `.github/`.
+- **OCP-compliant rules header dispatch** (STORY-slim-083 R6) — `_build_command_rules_header()` dispatches on `profile.rules_import_style` (`@import`/`inline`/`instructions`) instead of hardcoded profile name checks. New adapters get correct rule injection automatically.
+- **Multi-stack auto-detection** (STORY-slim-080) — `pactkit init` auto-detects multiple stacks and writes `stack: [python, typescript]` list syntax to `pactkit.yaml`. `pactkit visualize` supports stack list.
+- **Two-tier module graph** (STORY-slim-081) — `visualize --mode module` generates dimension-based subgraphs (Code/PDCA/Service/Frontend Topology).
+- **Prompt template sync** (STORY-slim-082) — Canonical prompt templates rendered consistently across all deployer formats.
+
+### Fixed
+- **OpenCode `rules_import_style`** — Corrected from `"instructions"` to `"inline"` to match actual behavior (commands inline rule content).
+
+## [2.9.11] - 2026-04-01
+
+### Fixed
+- **Rules template variables** — `_deploy_rules()` now renders `{PROJECT_CONFIG_DIR}` and other template variables via `_render_prompt()`. Previously rules were deployed with raw template strings, causing unresolved `{PROJECT_CONFIG_DIR}` in Codex/OpenCode deployments.
+
+## [2.9.10] - 2026-04-01
+
+### Fixed
+- **Skill script `__future__` import** — `load_script()` now hoists `from __future__ import annotations` above `_SHARED_HEADER`, fixing SyntaxError in deployed `spec_linter.py`. Added `# === SCRIPT BODY ===` marker to `spec_linter.py`.
+- **Lessons table auto-repair** — `append_lesson()` now calls `_repair_table_structure()` before appending, fixing: missing header, wrong header format, data rows before header, stray text in table area.
+
+## [2.9.9] - 2026-04-01
+
+### Added
+- **GitHub Copilot adapter support** — New `copilot` FormatProfile in `profiles.py`. `pactkit init --format copilot` deploys to project `.github/` directory.
+- **Dynamic `--format` CLI choices** — `init`, `update`, `upgrade` commands now derive `--format` choices from `VALID_FORMATS` instead of hardcoded list. Adding a new format profile auto-exposes it in CLI.
+
+### Fixed
+- **Excluded command stripping** — `strip_excluded_command_references()` in `DeployerBase` now strips `/project-sprint` references from all rendered prompts for formats that exclude it (Copilot, Codex, OpenCode).
+
+## [2.9.4] - 2026-03-31
+
+### Fixed
+- **Init playbook DIP violation** (STORY-slim-074) — Eliminated `DETECTED_ENV` runtime IDE detection; all hardcoded paths replaced with template variables (`{FORMAT_NAME}`, `{PROJECT_CONFIG_DIR}`, etc.). Adding a new IDE format now requires zero playbook changes.
+- **Full DIP audit** — Fixed hardcoded IDE paths in doctor skill, core-protocol rule, and done command.
+- **tree-sitter promoted to core dependency** — No longer optional; CI install updated to include `tree-sitter-go`, `tree-sitter-java`, `tree-sitter-typescript`.
+- **`--focus` scan optimization** — `_scan_files` now scans only the focused subdirectory, not the full project root. `pactkit visualize --focus` without `--mode` now correctly passes focus through.
+- **SCAN_EXCLUDES expanded** — From 13 to 30+ entries covering Go (`vendor`), Java (`target`, `.gradle`, `.mvn`), Node (`.next`, `.nuxt`, `.turbo`), IDE (`.idea`, `.vscode`), VCS (`.svn`, `.hg`), and more.
+- **Codex pactkit.yaml candidates** — 3 functions in `visualize.py` now include `.codex/pactkit.yaml` in search paths.
+- **Topology markers** — `_TOPOLOGY_MARKERS` and `PdcaParser.markers` now include all 3 IDE format directories.
+
+## [2.9.3] - 2026-03-31
+
+### Added
+- **Multi-language call chain fix** (STORY-slim-069) — Dispatch hint comment parsing (`pactkit-trace: dispatches_to`) and inheritance edge linking extended from Python-only to Go (struct embedding), Java (extends/implements), and TypeScript (class extends) tree-sitter analyzers.
+- **CLI visualize args exposed** (HOTFIX-slim-070) — `--entry`, `--focus`, `--reverse`, `--depth`, `--max-nodes` now reachable from `pactkit visualize` CLI.
+
+### Fixed
+- **4 call chain断链** (STORY-slim-068) — dict.update scan collision, dynamic dispatch hints, abstract method orphan nodes, cross-package stub edges.
+- **CI install command** — Fallback from `.[multilang]` to `.[dev]` in generated pactkit.yml.
+
+## [2.9.2] - 2026-03-30
+
+### Fixed
+- **FormatProfile.excluded_commands** — `project-sprint` excluded for OpenCode/Codex (requires subagent team, Claude Code only). Doctor `check_config_drift` now respects format-level exclusions.
+- **Redundant pactkit.yaml component lists** — Removed explicit agents/commands/skills/rules lists from `.opencode/pactkit.yaml` (absence = deploy all).
+- **Orphaned spec cleanup** — Removed 7 pre-developer-prefix spec files that were already archived under old IDs.
+
+## [2.9.1] - 2026-03-30
+
+### Added
+- **Topology-aware trace** (STORY-slim-066) — ApiCallParser (tree-sitter-typescript) and AgentParser (LangGraph/YAML/MCP) for multi-topology code tracing. Plan/Act phases now include topology gate.
+
+### Fixed
+- **Monorepo subdirectory detection** — TopologyParser.detect() now scans immediate subdirectories, fixing false negatives for monorepo layouts (e.g., `web/package.json`).
+- **Doctor false drift warnings** — `check_config_drift()` now searches global deploy directories (`~/.claude/`, `~/.config/opencode/`, `~/.codex/`) instead of only project-local paths.
+- **Canonical lessons.md header** — Init Phase 5 now enforces `| Date | Lesson | Context |` table header, preventing AI-invented column names like `| Source |`.
 
 ## [2.9.0] - 2026-03-28
 
 ### Added
-- **All-IDE default deployment** — `pactkit init` now deploys Claude Code + OpenCode + Codex configs in one shot by default. No need to specify `--format` per IDE.
+- **`pactkit init` deploys all IDEs by default** — `--format all` is now the CLI default, deploying Claude Code + OpenCode + Codex configs in one shot. No need to specify `--format` per IDE. Packaging modes (plugin, marketplace) excluded from "all".
 
 ### Fixed
-- **Entry-point deployer circular import** — Lazy-load adapter deployers to fix `ValueError` when running via pipx.
+- **Entry_point deployer circular import** — Lazy-load entry_point deployers to fix `ValueError` when running `pactkit init` via pipx. Module-level `ep.load()` caused circular import between deployer.py and adapter packages.
 
 ## [2.8.0] - 2026-03-27
 
 ### Added
 - **3-IDE default install** — `pip install pactkit` now installs all three IDE adapters (Claude Code + OpenCode + Codex) out of the box.
 
+### Fixed
+- **OpenCode command architecture** — Reverted OpenCode from skills-only back to `commands/` + `skills/` dual architecture. OpenCode auto-discovers commands from `commands/*.md` (invoked via `/project-plan`), while embedded skills in `skills/` are loaded by AI agent on demand. `opencode.json` command entries now only contain model routing (no `template` field — it was incorrectly treated as file path, but is actually inline text).
+- **Spec version confusion** — `/project-plan` Phase 3.2a no longer reads version from `pactkit.yaml` (PactKit toolkit version). Now explicitly reads from project's package manifest (`pyproject.toml`, `package.json`, `Cargo.toml`).
+- **OpenCode path isolation** — All deployed OpenCode files reference `~/.config/opencode/` paths, CLI commands replaced with `python3 ~/.config/opencode/skills/*/scripts/*.py` invocations.
+- **pactkit.yaml simplification** — Removed redundant component lists (agents/commands/skills/rules) from yaml template. Absence = deploy all from `VALID_*` sets. `pactkit doctor` drift check skips absent keys.
+
 ### Changed
-- **Cross-IDE command architecture** — Claude Code uses skills-only, OpenCode uses commands + skills, Codex uses skills-only with `$` prefix.
+- **Cross-IDE command architecture**:
+  - Claude Code: skills-only (`skills/project-*/SKILL.md`), prefix `/`
+  - OpenCode: commands + skills (`commands/project-*.md` + `skills/pactkit-*/SKILL.md`), prefix `/`
+  - Codex: skills-only (`skills/project-*/SKILL.md`), prefix `$`
 
 ## [2.7.0] - 2026-03-27
 
 ### Added
-- **Commands → Skills migration** — 11 PDCA commands now deploy as `skills/{name}/SKILL.md` for Claude Code format. Legacy command files auto-removed on upgrade.
-- **Codex FormatProfile** — Re-added `codex` profile for thin adapter pattern support.
+- **Commands → Skills Migration** (STORY-slim-063) — 11 PDCA commands now deploy as `skills/{name}/SKILL.md` subdirectories instead of flat `commands/{name}.md` files for Claude Code format. `VALID_SKILLS` expanded from 10 to 21 entries (10 embedded + 11 commands).
+- **Legacy Command Cleanup** — `_cleanup_legacy_commands()` auto-removes old `project-*.md` from `commands/` on upgrade, preserving non-PactKit files.
+- **Codex FormatProfile** (STORY-slim-060) — Re-added `codex` profile to core for thin adapter pattern support (`pactkit-codex` package).
+
+### Fixed
+- **board.py update_task** (HOTFIX-slim-061) — `update_task` now recognizes bullet-format Done entries (`- **STORY-xxx**:`), not just heading format.
+- **visualize --lazy focus** (HOTFIX-slim-062) — Removed hardcoded `--focus cli` refresh; added stem matching for focus target resolution.
+
+### Changed
+- **Deploy summary** — Output now shows unified `Skills (embedded + commands)` count instead of separate Commands/Skills lines.
+- **Cross-format isolation** — OpenCode and Codex profiles unaffected; commands still deploy as flat `.md` files for non-classic formats.
+
+## [2.6.1] - 2026-03-26
+
+### Fixed
+- **OpenCode backward compatibility** — `pactkit-opencode` added as core dependency so `pip install pactkit` automatically includes OpenCode deployment support. Users upgrading from 2.5.0 no longer lose `--format opencode`.
+- **Version sync** — `pactkit-opencode` version aligned to 2.6.0 to match core versioning.
 
 ## [2.6.0] - 2026-03-26
 
 ### Added
-- **Plugin adapter architecture** — `DeployerProtocol` and `DeployerBase` with registry pattern (`register_deployer()`). New IDE formats can be added as standalone pip packages via `entry_points`.
-- **pactkit-opencode adapter** — OpenCode deployer extracted into standalone `pactkit-opencode` package.
+- **DeployerProtocol & DeployerBase** (STORY-slim-057) — Extracted deployer interface (`typing.Protocol`) and shared base class with registry pattern (`register_deployer()`, `get_deployer()`), enabling adapter-based plugin architecture.
+- **pactkit-opencode Adapter Package** (STORY-slim-058) — Extracted all 8 OpenCode-specific functions into standalone `pactkit-opencode` package with `entry_points`-based auto-registration. `pip install pactkit-opencode` activates OpenCode format automatically.
+- **Entry Point Auto-Discovery** — `_load_entry_point_deployers()` scans `pactkit.deployers` entry_point group at import time for zero-config adapter registration.
+
+### Removed
+- **Codex Profile** (STORY-slim-059) — Removed dead `codex` FormatProfile, YAML candidates, and all codex references from source. VALID_FORMATS auto-shrinks via `FORMAT_PROFILES.keys()`.
+- **OpenCode Functions from Core** — 8 OpenCode-specific functions (~300 lines) moved to `pactkit-opencode` adapter. `deployer.py` reduced from 1754 to 1448 lines (-17%).
+
+### Changed
+- **deployer.py Dispatch** — `deploy()` now dispatches via `_DEPLOYER_REGISTRY` instead of if/elif chain. New formats only need to call `register_deployer()`.
+- **Architecture Principles** — Updated rule templates to reflect adapter pattern (class-based deployers, no codex references).
 
 ## [2.5.0] - 2026-03-26
 
 ### Added
-- **100% E2E CLI coverage** — 60 subprocess-based tests covering all CLI subcommands.
-- **`python -m pactkit`** — Module entry point support.
+- **E2E CLI Coverage 100%** (STORY-slim-056) — 60 subprocess-based E2E tests covering all 25 CLI subcommands, including parametrized `--help` consistency check, error path validation, and Unicode project path support.
+- **`__main__.py`** — `python -m pactkit` now works as an alternative to the `pactkit` entry point.
 
 ### Fixed
-- **Robustness sweep** — Atomic file writes for `.mmd` and `pactkit.yaml`, O(1) callee resolution, large file OOM guard (1MB limit), Windows encoding compatibility.
+- **Mermaid Quote Injection** (STORY-slim-053 R1) — File/function names containing `"` no longer break `.mmd` graph rendering; escaped via `#quot;` HTML entity at 4 label sites.
+- **O(N×E) Callee Resolution** (STORY-slim-053 R2) — `_resolve_callee()` now uses a pre-built `suffix_index` dict for O(1) lookup instead of linear scan.
+- **Module Index Collision** (STORY-slim-053 R3) — `module_index` changed from `dict[str, Path]` to `dict[str, list[Path]]` with `_best_match()` same-package preference, fixing silent node loss for same-name files in different directories.
+- **Focus Substring False Positives** (STORY-slim-053 R4) — `--focus auth.py` no longer matches `oauth.py`; changed to exact path-tail matching with `_extract_node_id()` set lookup.
+- **BFS O(N²) Pop** (STORY-slim-053 R5) — All 4 BFS sites now use `collections.deque.popleft()` instead of `list.pop(0)`.
+- **`_rewrite_yaml` Non-Atomic Write** (STORY-slim-054 R1) — `config.py` now uses tmp+rename pattern, preventing `pactkit.yaml` corruption on crash/disk-full.
+- **`_deploy_ci` Dict Mutation** (STORY-slim-054 R2) — Changed `.pop("_ghe_override")` to `.get()`, preventing caller dict mutation across multi-call scenarios.
+- **`atomic_write` .tmp Residual** (STORY-slim-054 R3) — Added try/except cleanup so `.tmp` files are removed on `os.replace()` failure.
+- **Visualize Non-Atomic .mmd Writes** (STORY-slim-055 R1) — All 4 `.mmd` output sites now use `_atomic_mmd_write()` (tmp+rename).
+- **Deployer Bare `read_text()`** (STORY-slim-055 R2) — 3 sites in `deployer.py` now specify `encoding='utf-8'` for Windows compatibility.
+- **Large File OOM** (STORY-slim-055 R3) — Added `MAX_FILE_BYTES=1MB` guard to `PythonAnalyzer` and `_build_class_graph()`, skipping auto-generated mega-files.
+- **Sprint Redundant Operations** (STORY-slim-050) — Eliminated duplicate visualize/clean/context runs in sprint orchestration.
+- **Skill Script Robustness** (STORY-slim-051, 052) — Hardened board.py, scaffold.py, spec_linter.py, visualize.py with encoding, error handling, and call-chain fixes.
 
 ## [2.4.1] - 2026-03-26
 
+### Fixed
+- **CI Template Override** (HOTFIX-slim-051) — `_build_github_workflow()` now reads `ci.install_cmd` from `pactkit.yaml` before falling back to `CI_PROFILES` default, preventing `pactkit update` from reverting custom install commands.
+- **Board ITEM_ID_RE** (HOTFIX-slim-052) — Regex now supports developer-prefixed IDs (`HOTFIX-slim-052`, `STORY-alice-001`), matching the pattern already used by `backfill.py` and `doctor.py`.
+
 ### Added
-- **Automated PyPI Publish** — GitHub Actions workflow triggers on `v*` tags with trusted publisher (OIDC).
-- **Board `move_story` command** — Move stories between Backlog/In Progress/Done sections.
+- **Board `move_story` Command** (HOTFIX-slim-052) — New `board.py move_story <ID> <target>` CLI subcommand moves stories between Backlog/In Progress/Done sections regardless of checkbox state.
+- **Automated PyPI Publish** — New `publish.yml` GitHub Actions workflow triggers on `v*` tags; runs full test matrix (Python 3.10-3.13) then publishes via PyPI trusted publisher (OIDC).
 
 ### Changed
-- **Closed-source migration** — Source repo moved to private; public entry point at `pactkit/pactkit-public`.
+- **Closed-Source Migration** — Source repo moved to `pactkit/pactkit-src` (private); public entry point at `pactkit/pactkit-public` (README, issues, install guide). PyPI distribution unchanged.
 
 ## [2.4.0] - 2026-03-25
 
