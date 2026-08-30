@@ -1,5 +1,60 @@
 # Changelog
 
+## [2.25.0] - 2026-08-30
+
+### Added
+- **Protected-branch push gate** — `git push` to a protected branch (default `main`/`master`) is intercepted across all three channels (PreToolUse, codex hooks.json, git pre-push) and blocked with an actionable message: the sanctioned path (feature branch + PR), the human bypass (`PACTKIT_ALLOW_DIRECT_PUSH=1` via the `!` prefix), and the repo-owner config (`enforcement.allow_direct_push`). Direct commits on protected branches block by default instead of merely running the full suite; `--no-verify` is no longer a free PreToolUse bypass (the agent can type it; only the env var proves a human channel). Every block and bypass is audited under `push_gate`.
+- **Tamper guard** — agent modification of enforcement artifacts is blocked: `.git/hooks/**`, `.pactkit/enforcement/**`, `.codex/hooks.json` fully; `.claude/settings.json` only when the edit removes a gate registration. Bypass: `PACTKIT_ALLOW_CONFIG_EDIT=1` or `enforcement.tamper_guard: false`.
+- **L1 Hard-Rule Override Protocol** — core rules now state that L1 rules are never waivable in conversation: a conflicting user instruction is refused (not obeyed), and editing rules/hooks/gate config to comply is itself L1 tampering. Sanctioned channels: do it the sanctioned way, the human runs the command via `!`, or the repo owner changes the config.
+- **Stack-aware commit-gate test commands** — the gate runs the detected stack's real suite (`npm test` / `go test ./...` / `mvn|gradle test`) instead of forcing pytest onto Node/Go/Java repos; `pactkit doctor` probes report stack-specific availability. Python keeps the venv-aware pytest path verbatim (monorepos included).
+- **Session context hooks** — `pactkit gate --hook session-start` regenerates `.pactkit/context.md` and prints it (SessionStart injects stdout as context; fires post-compaction too), `--hook pre-compact` refreshes state as a side effect and never blocks compaction. Cold-start orientation is deterministic instead of prompt-hoped.
+- **Spec tampering guard** — during Act, editing a spec with an active preflight receipt is blocked ("Spec is Law", L1); Plan-phase spec writing is unaffected (no receipt exists yet). Bypass: `PACTKIT_ALLOW_SPEC_EDIT=1` or `pactkit gate authorize spec_edit`.
+- **Authorization gate** — external-effect commands (`gh pr create`, `gh release create|delete|upload`, `gh repo create|delete`, `npm`/`pnpm`/`yarn`/`cargo publish`, `twine upload`, `docker push`) block until the user authorizes: ask first, then `pactkit gate authorize <scope>` opens a short-TTL audited window; the strict human channel is `PACTKIT_AUTHORIZED=1` via `!`. Read-only variants never match. Honest threat model: prevents forgetting, not malice — all uses leave records.
+- **Secrets gate** — Bash commands containing literal credential material (AWS `AKIA…`, `ghp_`/`github_pat_`, `glpat-`, `xox?-`, `sk-…`, private keys, `password=`/`pwd=`/`passwd=` with a literal value) block by default; env-var indirection (`password=$DB_PASS`) is exempt as the sanctioned pattern. Bypass: `PACTKIT_ALLOW_SECRET=1` or `enforcement.secrets_gate: false`.
+- **`pactkit gate` command** — one entry for session hooks and `authorize <scope> [--ttl-minutes N]` (token lives in the tamper-guard-protected `.pactkit/enforcement/`).
+- **Gate telemetry** — gate blocks, authorizations, and Skill invocations feed the run-event stream (`gate_blocked` / `authorization_asked` / `authorization_granted` / `command_invoked`) so `pactkit stats` reflects real direct-PDCA usage, not only the workflow engine: per-gate block counts, per-command invocation counts, and the authorization pair at project scope. Telemetry is best-effort and never blocks a gate verdict.
+- **`enforcement` config section** — `protected_branches` (default `[main, master]`), `allow_direct_push` (false), `tamper_guard` (true), `spec_guard` (true), `auth_gate` (true), `secrets_gate` (true), `auth_ttl_minutes` (30). Missing/malformed values fall back to safe defaults.
+
+### Fixed
+- **Git hooks no longer lock out machines without pactkit** — generated pre-commit/pre-push scripts probe `command -v pactkit` and WARN + allow when the binary is missing (was: exit 127 blocking every commit for teammates/CI in non-Python teams).
+- **Audit records no longer persist credentials** — command-derived text is redacted (`[REDACTED:{pattern}]`) before any persistence (enforcement reasons, event details, stderr); `pactkit clean` scrubs legacy records once. Found in the 2026-08-30 fleet inspection: a blocked `PGPASSWORD=…` command had written the literal password into the on-disk audit record.
+
+### Changed
+- **Behavior change (intentional)**: direct commits on `main`/`master` that previously "just ran more tests" now block by default — set `enforcement.allow_direct_push: true` (PactKit's own repo does) or use the bypass env var.
+- `pactkit stats` output gains a project-scoped `Gate telemetry` section (JSON: `gate_telemetry`).
+- Constitution baseline: core protocol word budget 735→900 (L1 Override Protocol + authorize channel).
+
+## [2.24.2] - 2026-08-27
+
+### Fixed
+- **`--format all` installs the codex hooks channel** — the default `pactkit update`/`pactkit init` path deploys codex files but 2.24.1 only installed `.codex/hooks.json` for an explicit `--format codex`; "all" now installs both native channels (Claude settings.json + codex hooks.json).
+
+## [2.24.1] - 2026-08-27
+
+### Fixed
+- **Enforcement probes resolve the project venv's pytest** — 2.24.0's static probes checked `importlib` in the *current* interpreter, so a pipx-installed CLI (whose venv has no pytest) reported commit-gate and coverage-gate as `unavailable` even though the gates themselves run the project venv's pytest perfectly. Probes now resolve the interpreter the same way the gates do (`pytest_command`).
+
+## [2.24.0] - 2026-08-27
+
+### Added
+- **Run event streams (append-only)** — every workflow-state mutation appends a typed event (`step_entered`, `checkpoint_written`, `evidence_invalidated`, `blocker_raised/cleared`, `run_completed`, `run_archived`) beside its checkpoint, written inside the same lock. The checkpoint JSON stays the projection; the event log holds the history the overwrite-style checkpoint cannot. Crash-tolerant: a torn trailing line is skipped and counted, never corrupts earlier lines.
+- **`pactkit stats`** — per-run friction metrics (duration, blocker dwell by kind, step rework, authorization decisions) with `--format json` for dashboards; pre-2.24 runs degrade to `events: unavailable` instead of failing. `/project-done` now records a friction snapshot per story. `pactkit continuation events <story>` inspects a run's stream.
+- **Gate enforcement completeness reporting** — every gate declares `full / degraded / unavailable` instead of degrading silently through a WARN line: commit-gate and coverage-gate record their observed status, `pactkit doctor --json` exposes an `enforcement` section (plus orphaned specs, config drift, graph provider, deploy parity, codex capabilities), and human doctor output gains per-gate summary lines. Self-lock degradation is now queryable, not silent.
+- **Codex native hooks thin registration** — `pactkit init --format codex` merges a PreToolUse→`pactkit commit-gate --hook` entry into the project's `.codex/hooks.json` (Codex's hooks engine is deliberately Claude-wire-compatible: tool_name `Bash`, exit 2 + stderr block — verified against 0.149.1; hooks.json discovery requires ≥0.114.0). User entries are preserved verbatim, unmergeable structures are left byte-identical, `config.toml` is never touched, deployment output carries the one-time trust-confirmation notice, and the git pre-commit fallback stays active until trust is confirmed. `pactkit doctor` probes the local Codex version and reports engine/deployment/trust state.
+- **Authorization audit trail** — `authorization_asked`/`authorization_granted` events fire automatically at authorization-blocker transitions (asked carries the sanitized question), and `pactkit continuation deny <story> --reason` records the state machine's first machine-expressible "no": an `authorization_denied` audit event plus a blocked-checkpoint rewrite (`denied: <reason>`), with double-deny and non-authorization denials rejected. `pactkit stats` reports per-run decision counts.
+- **outcome_unknown crash recovery** — commit-gate opens an attempt fence (with pid) *before* running; the terminal record closes it. A crash between the two leaves a machine-observable open fence: `resume` blocks with an actionable reason (live pid → "still active, wait"; dead pid → "re-run the gate") — no time-window guessing. Re-running the gate closes the fence and restores normal decisions. Projects without fences behave exactly as before.
+- **Command manifest v2 (reference digests)** — the ownership ledger for codex command skills records the sha256 of every deployed reference file (`record_deployed_reference`/`read_command_references`); stale-reference cleanup consumes these proofs, restoring the whole-directory retirement of disabled commands that core's 5311c56 ownership narrowing had inadvertently broken. v1 manifests read compatibly; corrupt manifests degrade to empty proofs.
+
+### Fixed
+- **pactkit-codex 2.23.0 ownership regression** (never published) — `skills/*/references/**` files dropped out of the deployed manifest's files table after the ownership narrowing, so stale references could never be retired; the command manifest v2 reference ledger (above) repairs deletion proofs without re-render comparisons (the codex render pipeline depends on deploy-time `enabled_commands`, making content replay structurally unusable as ownership evidence).
+- **`pactkit continuation events` path traversal** — story IDs are validated before the event-stream path is built (QA follow-up).
+- **hooks.json merge safety** — invalid user structures (`hooks` non-dict, `PreToolUse` non-list) are left byte-identical with an explicit report instead of being rewritten; merges run under a best-effort inter-process lock that proceeds unlocked on timeout (deployment never hangs).
+- **Blocker dwell undercount** — consecutive re-raises within one blocker episode no longer restart the dwell measurement; the episode is anchored at its first raise.
+
+### Changed
+- **`hook_entry` dual-host normalization** — legacy codex array-form commands are joined before matching, and the payload `cwd` overrides the CLI-resolved project root on both hosts.
+- **Golden CLI surface** — pins the new `stats` subcommand, `continuation deny`/`events` actions, and `doctor --json`.
+
 ## [2.23.0] - 2026-08-27
 
 ### Added

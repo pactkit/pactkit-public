@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/logo.png" alt="PactKit" width="480" />
+  <img src="https://raw.githubusercontent.com/pactkit/pactkit-src/main/docs/assets/logo.png" alt="PactKit" width="480" />
 </p>
 
 <p align="center">
@@ -234,7 +234,7 @@ PactKit deploys 10 skills (3 scripted + 7 prompt-only), auto-invoked by commands
 
 ## CLI Subcommands
 
-PactKit ships 36 deterministic CLI subcommands — operations that were previously delegated to AI prompts are now enforced in Python code (the "C" in P.A.C.T.):
+PactKit ships 45 deterministic CLI subcommands — operations that were previously delegated to AI prompts are now enforced in Python code (the "C" in P.A.C.T.):
 
 | Command | Purpose |
 |---------|---------|
@@ -266,10 +266,26 @@ PactKit ships 36 deterministic CLI subcommands — operations that were previous
 | `pactkit lint-lessons` | Validate lessons.md structure |
 | `pactkit lint-testcase` | Validate test case structure |
 | `pactkit done-verify` | Archive honesty gate: requirement→test evidence chain, checkbox↔case consistency, status machine (blocks `/project-done` on FAIL) |
-| `pactkit commit-gate` | Pre-commit test gate with skip≠pass transparency; PreToolUse hook + git pre-commit channels, auto-installed per format |
+| `pactkit commit-gate` | Pre-commit test gate with skip≠pass transparency; stack-aware (pytest/npm test/go test/mvn/gradle); PreToolUse hook + git pre-commit/pre-push channels, auto-installed per format |
+| `pactkit gate` | Session context hooks (`--hook session-start/pre-compact`) + external-effect authorization (`pactkit gate <scope> [--ttl-minutes N]`) |
 | `pactkit deps` | External dependency check (`deps check`) and guided install (`deps install`) for node/codegraph/gh |
 | `pactkit schema config` | List every pactkit.yaml key with default, effective value, and source |
 | `pactkit sync` | Sync codegraph index |
+
+### Enforcement Gates (2.25.0)
+
+The hook layer enforces the rules prompt text can only state — protected branches, specs, credentials, and external effects survive a conflicting instruction instead of losing to it:
+
+| Gate | Blocks | Bypass (human/config only) |
+|------|--------|---------------------------|
+| `push_gate` | Direct push to a protected branch (default `main`/`master`) | `PACTKIT_ALLOW_DIRECT_PUSH=1` or `enforcement.allow_direct_push` |
+| `commit_gate` | Commits on protected branches (default) and RED test suites | same as push_gate; `develop` keeps the full-suite rule |
+| `spec_guard` | Editing a spec that has an active preflight receipt (Spec is Law during Act) | `PACTKIT_ALLOW_SPEC_EDIT=1` or `pactkit gate spec_edit` |
+| `auth_gate` | External-effect commands (PR/release/publish/repo) until the user confirms | `pactkit gate <scope>` TTL token or `PACTKIT_AUTHORIZED=1` |
+| `secrets_gate` | Literal credential material in commands (env-var indirection is exempt) | `PACTKIT_ALLOW_SECRET=1` |
+| `tamper_guard` | Modifying enforcement artifacts (hooks, gate registrations, audit records) | `PACTKIT_ALLOW_CONFIG_EDIT=1` |
+
+All blocks/bypasses are audited (`.pactkit/enforcement/`) and feed `pactkit stats` as gate telemetry (per-gate block counts, per-command invocation counts, authorization pairs) — the friction data that decides what to tune next.
 
 ## Deployment Architecture
 
