@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.25.1] - 2026-09-01
+
+### Fixed
+- **`pactkit gate authorize <scope>` parses as documented** — 2.25.0's parser accepted only the bare positional form (`pactkit gate <scope>`), so the form printed by every block message and the L1 Override Protocol failed with "unrecognized arguments"; both forms now parse (HOTFIX-slim-20260830bbb5bc219d35).
+- **Cross-repo commands are judged by the repo they operate on** — `cd <other-repo> && git push` was evaluated against the session cwd's enforcement config; `hook_entry` now resolves the last `cd` target before the git command and evaluates gates against that repository (HOTFIX-slim-20260830bbb5bc219d35).
+- **commit-gate no longer misfires on docs/meta-only commits** — three defects that blocked a zero-code design-baseline commit three times and forced test-writing before allowing it (HOTFIX-slim-20260901469666ef23a8): `.gitignore`/`.claude/**`/`.codex/**` are now doc-only (repo/agent metadata carries no runtime code and no longer disqualifies the change set from the skip path); the full-suite target falls back from `tests/unit/` to `tests/` when only a flat layout exists, and a zero-collected run reports "no tests collected" instead of implying failures (still RED — the TDD contract is unchanged); "No module named pytest" from the venv-less fallback interpreter raises `GateUnavailable` → WARN + allow, matching the missing-binary path (R3 self-lock protection).
+
 ## [2.25.0] - 2026-08-30
 
 ### Added
