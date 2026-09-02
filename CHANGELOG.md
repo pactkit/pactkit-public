@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.25.2] - 2026-09-02
+
+### Fixed
+- **commit-gate counts survive repo `addopts` interference** — the gate parsed pass/fail counts from pytest's terminal summary line, but a repo's `addopts = "-q"` stacks with the gate's own `-q` into `-qq`, where pytest 9 prints no final summary at all: every run parsed as all-zero, and a genuinely red (flaky) run was misreported as "no tests collected" (live incident 2026-09-02, harness-backend; STORY-slim-202609025bc9246b6a54). Counts now come from a `--junitxml` side channel (pinned `junit_family=xunit2`) that verbosity cannot suppress, with the terminal parse as fallback. Repo `addopts` are otherwise fully honored — required run flags such as `--asyncio-mode=auto` keep applying, addopts are never cleared — and a repo that disables the junitxml plugin degrades to terminal parsing instead of locking commits. Failure messages now report the exit code's actual meaning (`no tests ran` for exit 5, usage/collection error for exit 4, `counts unparseable` with an addopts hint otherwise), and the gate runs `-rsfE` so `FAILED`/`ERROR` short-summary lines — which survive `-qq` — reach the block message.
+
 ## [2.25.1] - 2026-09-01
 
 ### Fixed
