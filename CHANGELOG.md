@@ -1,5 +1,87 @@
 # Changelog
 
+## [2.26.1] - 2026-09-15
+
+### Fixed
+- **deploy 不再因扫描根下的不可读目录崩溃**——`Path.exists()` 只吞 ENOENT/ENOTDIR/ELOOP，EACCES 会直接抛出；GitHub Ubuntu runner 的 `/tmp` 含 root 属主 0750 的 `systemd-private-*` 目录，中性 cwd 下 `deploy → cleaners.detect_stacks` 的子目录 marker 检查抛 `PermissionError`（pactkit-opencode 2.26.0 Release Acceptance 8 项失败、publish 被拒）。`cleaners.detect_stacks` 与 `utils.stack_test_plans/_issues` 的全部 marker 检查改为 OSError 安全版（一律视为无 marker）。
+
+
+## [2.26.0] - 2026-09-15
+
+> 产品重定位版本：PactKit 收敛为**轻量开发赋能脚手架**——无管理员、无集中控制、
+> 无自建服务。包含大量语义变更，升级前请阅读下方 Migration。
+
+### Migration (2.25.2 → 2.26.0)
+
+- **自建 MCP server 已退役**：`pactkit mcp` 变为兼容说明入口（解释退役 + 迁移方向，
+  非零退出）；Codex 的 gate 通道从 MCP 工具迁移到原生 hooks（已有配置自动迁移，
+  用户/未知条目按证据保留）；新部署默认**零 MCP 注入**（不再写任何 server 注册或
+  安装推荐）。
+- **配置入口统一**：`load_effective_config` 是唯一配置解析入口（候选优先级 + 基线
+  合并 + tighten-only 方向约束，ADR-0007）；直接读单份 pactkit.yaml 的路径已收口。
+- **验证决策是结构化数据**（ADR-0004）：Done 的回归路由消费
+  `pactkit regression --check-record --json` 的 `decision.verdict`
+  （reuse/supplement/re-verify/no-baseline），不再解析文本前缀。
+- **规则语料为 CI 不变量**（ADR-0005）：改规则必带 `tests/fixtures/rules_corpus/`
+  语料案例（14 fixture）；RULES_VERSION 升至 2026-09.2。
+
+### Added
+- **轻量脚手架重定位落地**（STORY-slim-20260911b2bbd79889e0，三轮复审 18 findings
+  修复）：候选清理限定受管范围（排除备份存储）；统一有效配置与门禁语义；能力展示/
+  上手/卸载输出与实际行为一致；三宿主 prompt 正文摘要 golden（85/83/71 artefacts，
+  删改必被检出）；真 wheel 组合验收（组合验收按零凭据拆分移交 adapter 仓）。
+- **提交路径收敛**（STORY-slim-20260915eaf18678ce23）：worktree/`core.hooksPath` 下
+  经 `git rev-parse --git-path hooks` 解析真实 hooks 路径——一次提交一个测试执行者
+  （此前 worktree 恒双跑全套）；被改测试文件直接映射自身（`test_X.py` 不再去找
+  `test_test_X.py`）；映射为空走快速层并显式建议全量（非 Python 栈无按文件选择
+  能力，保持全量并说明）；main/develop 全量安全网保留但原因可见、可配置
+  （`enforcement.main_branch_full_suite`）；coverage-gate 接受 `--tests` 选择集
+  （Done 剧本已接线，不再二次全量）；gate 计划先行（strategy/原因/命令/范围在测试
+  前可见）+ 流式输出 + 每步耗时入 enforcement 记录 `details`；暂存区为准
+  （未暂存改动显式报告为排除项）。
+- **验证事实与治理开销收敛**（STORY-slim-20260915ac3e5c24fdd3）：验证记录以内容
+  指纹为主键（跨 Story/无 Story 可复用）；无新鲜无歧义 preflight receipt 时盖章为
+  **无归属**（`_unattributed.json` + 指纹仍登记）——"最近 receipt 猜 Story"的错归属
+  结构上不再可能；PreCompact 只写轻量标记（一次压缩一次 context 生成，内容相同不
+  重写）；spec guard 的 receipt 锁定改为哈希匹配 + 7 天新鲜双条件（无哈希/过期/内容
+  漂移即解锁并输出依据）；`telemetry.enabled` 开关（默认开，关闭不影响门禁契约）。
+- **PDCA 工程指导按缺口加载**（STORY-slim-202609144d0b3cb593aa）：复用四判断
+  （可用性/适用性/决策/证据）与恢复语义集中于共享 capsule；Act 1.5 缺口驱动——
+  删除"Spec 无关注点则静默跳过"、`pactkit risk --json` 消费完整 decisions、1–3 篇
+  为初始建议而非上限（无缺口 0 篇有效，确认的风险超三篇仍读）；Plan 关键词降为
+  候选信号（提及≠义务）；Check 增独立复用审查；Done 路由不被指南筛选覆盖。附 63 份
+  逐会话真实宿主试验记录（`docs/acceptance/r8-trial/`）。
+- **结构化验证决策接口**（STORY-slim-2026090699752886f924，ADR-0004/0006）：验证
+  证据由 code touchpoint 盖章；Done Step 0 按结构化 verdict 路由。
+- **固定语料规则评估**（ADR-0005）：`pactkit rules-eval` 对 14-fixture 语料给
+  precision/recall，改规则必带语料案例；安全设计 W013/W014 落地。
+- **codegraph 集成**（ADR-0008）：语义代码查询统一走 `pactkit query` CLI 路由
+  （`--explore/--chain/--callers/--impact --json --explain`），freshness 与 fail-closed
+  由路由器强制。
+- **生成式 reference 目录 + 漂移门**（STORY-slim-2026082727cc4ab535e7）；
+  **Codex 并列插件清单**让 Codex 真正拿到 skills（STORY-slim-20260827fb6291b717eb）。
+
+### Fixed
+- **worktree 提交不再双跑全套测试**（PreToolUse 与共享 git pre-commit 的去重判定
+  此前恒失效，注释自认 "at worst double-runs"）。
+- **gate -qq 误报**（STORY-202609025bc9246b6a54）：repo `addopts=-q` 叠加导致
+  flaky 真红被误报 no tests collected——junitxml 权威计数通道修复。
+- **流式 pytest 输出保住超时上限**：Popen 化后读循环补 threading.Timer 看门狗，
+  无输出挂起在期限内触发 GateUnavailable（复现测试当场卡死实证）。
+- **done-verify 不再把 Spec 散文里的模板占位符当声明测试文件**；
+  `spec-guard` 解锁原因行不再被吞；`pactkit risk` 输出对齐软预算语义
+  （`(initial read, max 3)`，空结果提示复核 uncovered risk）。
+- **审计记录不落凭据**（2026-08-30 发现的续修）：命令派生文本入库前 redacted。
+
+### Changed
+- **行为变更（有意）**：Spec 编辑锁定从"有 receipt 即锁"改为指纹失效制；验证记录
+  无归属时不再猜 Story；PreCompact 不再全量刷新 context（SessionStart 单次生成）。
+- `pactkit doctor` 决策可追溯性降为 WARN（否决才阻断）；Codex 默认不再注入
+  config.toml。
+- Constitution/prompt 预算基线 107317→109200（逐项理由见
+  `tests/unit/test_story063_prompt_slimming.py` 注释链）。
+
+
 ## [2.25.2] - 2026-09-02
 
 ### Fixed

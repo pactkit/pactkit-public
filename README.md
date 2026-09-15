@@ -1,18 +1,19 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/pactkit/pactkit-src/main/docs/assets/logo.png" alt="PactKit" width="480" />
+  <img src="https://github.com/pactkit/pactkit alt="PactKit" width="480" />
 </p>
 
 <p align="center">
   <a href="https://pypi.org/project/pactkit/"><img src="https://img.shields.io/pypi/v/pactkit" alt="PyPI version" /></a>
   <a href="https://pypi.org/project/pactkit/"><img src="https://img.shields.io/pypi/pyversions/pactkit" alt="Python" /></a>
+  <a href="https://github.com/pactkit/pactkit-src/actions"><img src="https://github.com/pactkit/pactkit-src/actions/workflows/pactkit.yml/badge.svg" alt="CI" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" /></a>
 </p>
 
 <p align="center"><strong>CODE is the Law. Data is the Truth. Prompt is ONLY instruction. AI is ONLY creativity.</strong></p>
 
-> **PactKit** (Pact 契约 + Kit) is a governance framework that enforces the **P.A.C.T.** contract between humans and AI agents. Deterministic operations run as code, not prompts. Decisions are grounded in data, not memory. AI does what it's best at — creativity and language — while code handles everything that must be repeatable and correct.
+> **PactKit** (Pact 契约 + Kit) is a lightweight dev-enablement scaffold: it gives AI coding assistants the standards, specs and methods of a disciplined engineering workflow, without getting in the way. Ordinary questions and ordinary coding never activate the workflow — you opt in per task. There is no admin plane, no central control, and nothing that cannot be uninstalled.
 >
-> 26 CLI subcommands, 9 specialized agents, 11 commands, 10 skills, and a full Plan-Act-Check-Done lifecycle. One `pip install` deploys to all 3 supported IDEs.
+> Deterministic operations run as code, not prompts (CODE is the Law). Decisions are grounded in data, not memory (Data is the Truth). 52 CLI subcommands, 9 specialized agents, 12 commands, 13 skills, and a Plan-Act-Check-Done lifecycle you invoke when you want it. One `pip install` deploys to all 3 supported IDEs (adapters are opt-in extras).
 
 ### Supported AI Tools
 
@@ -88,14 +89,18 @@ Requires Python 3.10+ and one of:
 - [OpenCode](https://opencode.ai)
 - [Codex CLI](https://github.com/openai/codex)
 
-> `pip install pactkit` automatically installs adapters for all 3 IDEs.
+> The base install is dependency-light (pyyaml only). Host adapters are
+> opt-in extras — install the ones for the IDEs you use:
 
 ### Optional Extras
 
 ```bash
+pip install pactkit[opencode]    # OpenCode adapter
+pip install pactkit[codex]       # Codex CLI adapter
 pip install pactkit[lint]        # Includes ruff for lint gate
 pip install pactkit[visualize]   # Includes tree-sitter for AST analysis
-pip install pactkit[all]         # Everything above + IDE adapters
+pip install pactkit[test]        # pytest + tomli (Python 3.10) for the test suite
+pip install pactkit[all]         # Everything above
 ```
 
 ### Recommended External Tools
@@ -233,7 +238,7 @@ PactKit deploys 9 specialized agents, each with constrained tools and focused re
 
 ## Skills
 
-PactKit deploys 10 skills (3 scripted + 7 prompt-only), auto-invoked by commands:
+PactKit deploys 13 skills (4 scripted + 9 prompt-only), auto-invoked by commands:
 
 | Skill | Type | Purpose |
 |-------|------|---------|
@@ -250,7 +255,7 @@ PactKit deploys 10 skills (3 scripted + 7 prompt-only), auto-invoked by commands
 
 ## CLI Subcommands
 
-PactKit ships 45 deterministic CLI subcommands — operations that were previously delegated to AI prompts are now enforced in Python code (the "C" in P.A.C.T.):
+PactKit ships 52 deterministic CLI subcommands — operations that were previously delegated to AI prompts are now enforced in Python code (the "C" in P.A.C.T.):
 
 | Command | Purpose |
 |---------|---------|
@@ -287,6 +292,42 @@ PactKit ships 45 deterministic CLI subcommands — operations that were previous
 | `pactkit deps` | External dependency check (`deps check`) and guided install (`deps install`) for node/codegraph/gh |
 | `pactkit schema config` | List every pactkit.yaml key with default, effective value, and source |
 | `pactkit sync` | Sync codegraph index |
+
+### Commit Path Convergence (2.26.0)
+
+- **Single test executor**: worktree and `core.hooksPath` layouts resolve the
+  real git hooks path — the host PreToolUse pass defers to the shared git
+  pre-commit hook instead of double-running the suite.
+- **Real incremental selection**: a changed test file maps to itself
+  (`test_X.py` runs `test_X.py`); an empty mapping runs the fast layer with an
+  explicit full-suite recommendation instead of silently escalating; polyglot
+  repos run every detected workspace's native test command.
+- **Observability**: the gate prints its plan (strategy, reason, command,
+  scope) before any test runs, streams pytest output, and records per-phase
+  timings into the enforcement record.
+- **Staged-first scope**: the gate checks what this commit will introduce
+  (`git diff --cached`); unstaged work is reported as excluded.
+
+### Verification Facts & Governance (2.26.0)
+
+- Verification records are keyed by **content fingerprint** (cross-story
+  reuse); with no fresh, unambiguous preflight receipt the post-commit stamp
+  lands **unattributed** instead of guessing a story.
+- PreCompact writes a lightweight marker — one context generation per
+  compaction cycle.
+- The spec guard binds a receipt only while its spec hash matches and the
+  receipt is fresh (expired/drifted receipts unlock with a reason).
+- `telemetry.enabled: false` skips event-stream writes without touching gate
+  semantics.
+
+### Engineering Guidance by Gap (2.26.0)
+
+- The reuse classification (availability / applicability / decisions /
+  evidence) lives once in the shared lifecycle capsule loaded by all four
+  phases; Act loads guidance by gap — an empty `pactkit risk` result is never
+  "no risk", 0 guides is valid when there is no gap, and confirmed risks
+  past the first three are still read and verified.
+- `pactkit risk --json` returns the full per-concern decisions for review.
 
 ### Enforcement Gates (2.25.0)
 
@@ -419,16 +460,19 @@ When conflicts arise: Spec wins. Always. The agent modifies code, never the spec
 
 ## MCP Integration
 
-PactKit conditionally integrates with MCP servers when available:
+As of **2.26.0**, PactKit is a lightweight development-enablement scaffold with
+**zero MCP server injection** — `pactkit init` no longer registers any server,
+and the self-hosted governance MCP server is retired (`pactkit mcp` prints the
+retirement note and migration path). Host-side MCP servers you configure
+yourself (Context7, Playwright, Chrome DevTools, Memory, …) still work: the
+playbooks reference them conditionally and skip gracefully when unavailable.
 
 | MCP Server | Purpose | PDCA Phase |
 |------------|---------|------------|
 | Context7 | Library documentation lookup | Act |
-| shadcn | UI component search/install | Design |
 | Playwright | Browser automation testing | Check |
 | Chrome DevTools | Performance/console/network | Check |
 | Memory | Cross-session knowledge graph | Plan/Act/Done |
-| Draw.io | Architecture diagram instant preview | Plan, Design |
 
 All MCP instructions are conditional — gracefully skipped when unavailable.
 
