@@ -1,19 +1,18 @@
 <p align="center">
-  <img src="https://github.com/pactkit/pactkit alt="PactKit" width="480" />
+  <img src="https://raw.githubusercontent.com/pactkit/pactkit-src/main/docs/assets/logo.png" alt="PactKit" width="480" />
 </p>
 
 <p align="center">
   <a href="https://pypi.org/project/pactkit/"><img src="https://img.shields.io/pypi/v/pactkit" alt="PyPI version" /></a>
   <a href="https://pypi.org/project/pactkit/"><img src="https://img.shields.io/pypi/pyversions/pactkit" alt="Python" /></a>
-  <a href="https://github.com/pactkit/pactkit-src/actions"><img src="https://github.com/pactkit/pactkit-src/actions/workflows/pactkit.yml/badge.svg" alt="CI" /></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" /></a>
+    <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" /></a>
 </p>
 
 <p align="center"><strong>CODE is the Law. Data is the Truth. Prompt is ONLY instruction. AI is ONLY creativity.</strong></p>
 
 > **PactKit** (Pact 契约 + Kit) is a lightweight dev-enablement scaffold: it gives AI coding assistants the standards, specs and methods of a disciplined engineering workflow, without getting in the way. Ordinary questions and ordinary coding never activate the workflow — you opt in per task. There is no admin plane, no central control, and nothing that cannot be uninstalled.
 >
-> Deterministic operations run as code, not prompts (CODE is the Law). Decisions are grounded in data, not memory (Data is the Truth). 52 CLI subcommands, 9 specialized agents, 12 commands, 13 skills, and a Plan-Act-Check-Done lifecycle you invoke when you want it. One `pip install` deploys to all 3 supported IDEs (adapters are opt-in extras).
+> Deterministic operations run as code, not prompts (CODE is the Law). Decisions are grounded in data, not memory (Data is the Truth). 55 CLI subcommands, 9 specialized agents, 12 commands, 25 skills, and a Plan-Act-Check-Done lifecycle you invoke when you want it. One `pip install` deploys to all 4 supported IDEs (adapters are opt-in extras).
 
 ### Supported AI Tools
 
@@ -22,8 +21,14 @@
 | **Claude Code** | Classic | `pactkit init` |
 | **OpenCode** | OpenCode | `pactkit init` |
 | **Codex CLI** | Codex | `pactkit init` |
+| **GitHub Copilot** | Copilot | `pactkit init --format copilot` |
 
-> `pactkit init` deploys all 3 IDEs at once. Use `--format <name>` to target a single IDE.
+> `pactkit init` deploys all 4 IDE formats at once. Use `--format <name>` to target a single IDE.
+
+Gate coverage differs by host: Claude Code and Codex CLI get the full gate set
+through native hooks; OpenCode and Copilot fall back to the git-hook layer,
+which covers the commit and push gates but not the pre-tool ones
+(`auth_gate`, `secrets_gate`, `tamper_guard`, `spec_guard`).
 
 ### What it looks like
 
@@ -238,30 +243,40 @@ PactKit deploys 9 specialized agents, each with constrained tools and focused re
 
 ## Skills
 
-PactKit deploys 13 skills (4 scripted + 9 prompt-only), auto-invoked by commands:
+PactKit deploys 25 skills. That total is the 12 PDCA commands (registered as
+skills, so `/project-plan` and `pactkit-visualize` deploy the same way) plus the
+13 tool skills below, auto-invoked by commands:
+
+13 tool skills (4 scripted + 9 prompt-only):
 
 | Skill | Type | Purpose |
 |-------|------|---------|
 | **pactkit-visualize** | Scripted | Code dependency graph (Mermaid .mmd): file-level, class-level, call-level |
 | **pactkit-board** | Scripted | Sprint board operations: add story, update task, archive |
 | **pactkit-scaffold** | Scripted | File scaffolding: create spec, test files, git branches, skills |
+| **pactkit-report** | Scripted | Interactive HTML dashboard from Mermaid architecture graphs |
 | **pactkit-trace** | Prompt-only | Deep code tracing and execution flow analysis |
 | **pactkit-draw** | Prompt-only | Generate Draw.io XML architecture diagrams |
 | **pactkit-analyze** | Prompt-only | Cross-artifact consistency check: Spec <-> Board <-> Test Cases |
+| **pactkit-audit** | Prompt-only | H1-H7 AI readiness assessment and hotspot analysis |
 | **pactkit-status** | Prompt-only | Cold-start project overview (sprint + git + health) |
 | **pactkit-doctor** | Prompt-only | Configuration drift detection and health report |
+| **pactkit-garden** | Prompt-only | Codebase quality patrol: dead code, stale docs, duplication |
 | **pactkit-review** | Prompt-only | PR code review with SOLID/Security/Quality checklists |
 | **pactkit-release** | Prompt-only | Version bump, architecture snapshot, git tag |
 
 ## CLI Subcommands
 
-PactKit ships 52 deterministic CLI subcommands — operations that were previously delegated to AI prompts are now enforced in Python code (the "C" in P.A.C.T.):
+PactKit ships 55 deterministic CLI subcommands — operations that were previously delegated to AI prompts are now enforced in Python code (the "C" in P.A.C.T.):
 
 | Command | Purpose |
 |---------|---------|
 | `pactkit init` | Deploy toolkit to AI coding assistant |
 | `pactkit update` | Update playbooks (preserves config) |
 | `pactkit upgrade` | Upgrade with format selection |
+| `pactkit adopt` | Create a minimal versioned contract for the current project |
+| `pactkit reconcile` | Preview or apply safe project-schema migrations |
+| `pactkit project-preflight` | Check adoption and compatibility before governed work |
 | `pactkit version` | Show installed version |
 | `pactkit schema` | Print document schemas |
 | `pactkit doctor` | Diagnose project health (HLD drift, board, config, deployment content parity, adapter skew) |
@@ -346,15 +361,15 @@ All blocks/bypasses are audited (`.pactkit/enforcement/`) and feed `pactkit stat
 
 ## Deployment Architecture
 
-PactKit supports three deployment formats:
+PactKit supports four deployment formats:
 
 ### Claude Code (Classic)
 
 ```
 ~/.claude/
 ├── CLAUDE.md                 <- Project context entry point
-├── rules/                    <- 8 rule modules (loaded per-command, not globally)
-├── skills/                   <- 21 skill packages (11 commands + 10 embedded)
+├── rules/                    <- 21 rule modules (loaded per-command, not globally)
+├── skills/                   <- 25 skill packages (12 commands + 13 tool skills)
 └── agents/                   <- 9 agent definitions
 ```
 
@@ -365,10 +380,10 @@ Commands are deployed as skills (`skills/project-*/SKILL.md`), invoked with `/pr
 ```
 ~/.config/opencode/
 ├── AGENTS.md                 <- On-demand @reference index (lazy rule loading)
-├── rules/                    <- 8 rule modules (3 core always-load + 6 on-demand)
-├── commands/                 <- 11 command playbooks (auto-discovered, invoked via /)
+├── rules/                    <- 21 rule modules
+├── commands/                 <- 12 command playbooks (auto-discovered, invoked via /)
 ├── agents/                   <- 9 agent definitions (mode: subagent)
-├── skills/                   <- 10 skill packages (AI agent loads on demand)
+├── skills/                   <- 13 tool skills (AI agent loads on demand)
 └── opencode.json             <- Global config (model routing, instructions)
 ```
 
@@ -380,8 +395,8 @@ OpenCode uses dual mechanism: `commands/` for user-facing PDCA entry points, `sk
 ~/.codex/
 ├── AGENTS.md                 <- Global constitution
 ├── config.toml               <- Model, sandbox, MCP config
-├── rules/                    <- 8 rule modules
-├── skills/                   <- 21 skill packages (11 commands + 10 embedded)
+├── rules/                    <- 21 rule modules
+├── skills/                   <- 25 skill packages (12 commands + 13 tool skills)
 └── .pactkit-version          <- Version marker for updates
 ```
 
@@ -426,9 +441,11 @@ Session context is generated locally at `.pactkit/context.md` and is ignored by 
 | `stack` | string | auto-detected | Project stack (`python`, `node`, `go`, `java`) |
 | `developer` | string | `""` | Developer prefix for Story IDs (multi-developer collaboration) |
 | `agents` | list | all 9 | Agent definitions to deploy |
-| `commands` | list | all 11 | Command playbooks to deploy |
-| `skills` | list | all 10 | Skills to deploy |
-| `rules` | list | all 8 | Constitution rule modules to deploy |
+| `commands` | list | all 12 | Command playbooks to deploy |
+| `skills` | list | all 25 | Skills to deploy (12 commands + 13 tool skills) |
+| `rules` | list | all 21 | Constitution rule modules to deploy |
+| `enforcement` | object | see below | Gate configuration — `protected_branches` (`["main","master"]`), `allow_direct_push` (`false`), `tamper_guard` (`true`), `spec_guard` (`true`), `auth_gate` (`true`), `secrets_gate` (`true`), `auth_ttl_minutes` (`30`) |
+| `telemetry` | object | `enabled: true` | Local-only usage telemetry (`.pactkit/events/`). Set `enabled: false` to stop recording; gate verdicts are unaffected |
 | `exclude` | object | `{}` | Components to exclude (e.g., `exclude.agents: [agent-name]`) |
 | `visualize.graph_provider` | string | (absent) | Graph query backend. Set `codegraph` to use `.codegraph/codegraph.db` for `pactkit query`. Absent = grep `.mmd` |
 | `ci` | object | `provider: none` | CI/CD pipeline generation (`github`, `gitlab`, `none`). Sub-fields: `runner` (default: `ubuntu-latest`), `language_version` (default: auto per stack), `github_host` (GHE server address), `actions_ref` (GHE actions prefix) |
@@ -484,6 +501,40 @@ pactkit update    # Updates all deployed IDEs
 ```
 
 Use `pactkit update --format <name>` to update a single IDE.
+
+Rolling back is `pip install pactkit==<previous-version>` followed by
+`pactkit update`. `pactkit doctor` reports a deployment whose files no longer
+match the installed CLI, which is how a partial rollback shows up.
+
+## Restricted and CI Environments
+
+`pactkit init` and `pactkit update` accept flags for environments that cannot
+reach the network or answer prompts:
+
+| Flag | Effect |
+|------|--------|
+| `--no-git` | Skips every git operation (hook installation, `.gitignore` edits) — for air-gapped or git-less setups |
+| `--no-external` | Skips external network calls (MCP registration, `gh` CLI, `pip`) |
+| `--non-interactive` | Auto-accepts defaults — for CI/CD |
+
+PactKit never sends your code or usage data anywhere. Telemetry is written
+locally under `.pactkit/events/` and can be turned off with
+`telemetry.enabled: false`. The only network access is the package index you
+install from.
+
+## Troubleshooting
+
+Start with `pactkit doctor` — it reports configuration drift, deployment
+parity against the installed CLI, adapter version skew, hook registration, and
+rule health. `pactkit doctor --json` emits the same data for scripts.
+
+| Symptom | Likely cause | What to do |
+|---------|--------------|------------|
+| A commit is blocked with `commit-gate` | Tests are RED, or you are committing directly to a protected branch | Fix the tests, or push a feature branch and open a PR. `enforcement.allow_direct_push: true` is for single-maintainer repos that work directly on `main` |
+| A command is blocked with `push-gate` / `auth-gate` | Direct push to a protected branch, or an external-effect command (`gh pr create`, `npm publish`, …) without authorization | Run `pactkit gate authorize <scope>` after the user agrees, or have the user run it themselves |
+| Gates behave inconsistently across teammates | Deployments are stale — each clone updates independently | `pactkit update` in that project, then `pactkit doctor` |
+| `pactkit doctor` reports adapter skew | `pactkit-codex`/`-opencode` version does not match core | Upgrade the adapter extras; core and adapters are version-pinned to each other |
+| The gate blocks work and you believe it is wrong | Genuine gate bug | `PACTKIT_ALLOW_*` env vars (see the gate table above) are the human channel; report the false positive with `pactkit stats` output |
 
 ## Contributing
 

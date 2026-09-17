@@ -1,5 +1,89 @@
 # Changelog
 
+## [2.27.0] - 2026-09-17
+
+> 安全加固版本：六轮对抗评审修复 34 条门禁缺陷 + 项目契约生命周期
+> （adopt / reconcile / project-preflight）。包含行为变更，升级前请阅读 Migration。
+
+### Migration (2.26.1 → 2.27.0)
+
+- **spec_guard：内容漂移从「解锁」改为「锁定」**。live receipt 的哈希与 Spec
+  不符意味着 Spec 被改过——这正是该门禁存在的理由，此前却作为"receipt 失效"
+  解锁编辑，且改动本身又解锁 Edit 面（spec_guard 退化为一次性减速带）。已授权
+  修改不受影响（`pactkit gate authorize spec_edit` / env / 关闸）。
+- **secrets_gate 与 auth_gate 的审计和提示不再回显命令文本**。清洗只覆盖已知的
+  凭据形态，同一条命令里任何未命中的凭据会随之进入审计记录。现在只记录命中的
+  形态名。
+- **tamper_guard 保护面扩大**：`.pactkit/**` 整个状态目录（含 preflight
+  receipt）、`.claude/settings.local.json`（宿主把 settings 的 env 注入 hook
+  进程且会话内热加载——一次 Write 即可植入 `PACTKIT_ALLOW_*` 关掉全部门禁）、
+  全部四份 `pactkit.yaml` 候选（`.opencode/` 与 `.github/` 优先级更高却曾被
+  排除在保护外）、更多写动词（`touch`/`ln`/`install`/`rsync`）。需要 agent
+  编辑这些文件的团队用 `PACTKIT_ALLOW_CONFIG_EDIT=1` 人工通道或关闭该门禁。
+- **core↔adapter 钉版同步升至 2.27.0**：`pactkit[opencode]`/`pactkit[codex]`
+  要求 adapter ≥2.27.0。core 与三个 adapter 需一起升级（发布顺序：core 先发，
+  adapter 紧随）。
+
+### Added
+
+- **项目契约生命周期**（PR #13）：`pactkit adopt`（最小本地契约，仅在四份配置
+  候选全部缺席时创建）、`pactkit reconcile`（确定性安全迁移：行级插入
+  `schema_version` 保留注释与未知键、写前回读验证、`utils.atomic_write` 落盘）、
+  `pactkit project-preflight`（UNADOPTED / RECONCILE / CURRENT / BLOCKED 四态，
+  过新或非法 schema 给出可行动的阻断信息）。项目采用保持纯本地——无项目注册表、
+  无全局扫描、无跨项目变更。CLI 子命令 52 → 55。
+- **支持矩阵** `docs/guides/support-matrix.md`：宿主 × 门禁 × Python × OS。
+  宿主表从 `gate_matrix.gate_coverage()` 派生并有守卫测试钉住——OpenCode /
+  Copilot 只有 git-hook 层，四个 pre-tool 门禁（auth/secrets/tamper/spec）
+  在该层不存在；macOS 未被 CI 覆盖、Windows 分支零覆盖，均如实写明。
+
+### Fixed — 六轮对抗评审（34 条）
+
+评审覆盖了全部六个门禁的输入解析；每条均带对照组端到端复现后修复。
+
+- **push_gate**：带引号 refspec（`git push origin 'main'`）与强推标记
+  （`+main`）曾放行受保护分支并写入"not protected"假保证；`$VAR`/反斜杠
+  refspec 现判为不可解析（WARN + DEGRADED，不再产出确定性放行）；git
+  pre-push hook 改用 git 交给 hook 的 stdin refspec（此前硬编码当前分支，
+  feature 分支上 `push origin HEAD:main` 曾真实放行）；`git -C` 现决定被检查
+  的仓库（"检查 A、提交 B"）。
+- **commit_gate**：`git -c core.hooksPath=/dev/null commit` 曾交棒给不会运行的
+  hook 使 RED 代码零验证落地（含大小写变体 `core.hookspath` 与
+  `GIT_CONFIG_COUNT/KEY_n/VALUE_n` 环境注入）；分派改为锚定命令位置
+  （`printf ... '{"note":"git commit"}' > .codex/hooks.json` 曾因字符串共现
+  跳过 tamper 并交棒）；命令替换（`git commit -m "$(rm ...)"`）补检；审计写
+  失败不再把 BLOCK 翻成崩溃（exit 1 对宿主是非阻塞）；畸形 stdin 从静默放行
+  改为留 WARN。
+- **tamper_guard**：复合命令分段回归（`cd .git/hooks && rm -f pre-commit` 曾
+  放行，`cd` 相对路径写受保护文件同样已覆盖）；`pactkit.yaml` 弱化即拦截
+  （关 gate 标志 / 开 allow_direct_push / 删 protected_branches，普通编辑与
+  已是 false 的值不误拦不自锁）；settings env 旁路通道（见 Migration）；
+  `rm -rf .pactkit && touch .pactkit` 曾把状态目录替换成普通文件使所有
+  凭据命令崩溃放行；符号链接 spec 与 `DOCS/SPECS` 大小写拼写（Edit + Bash
+  两个面）；Edit 模拟尊重 `replace_all`；Bash 面只读操作（备份/统计 spec）
+  不再误拦。
+- **secrets_gate**：补齐自身动机案例与常见形态——`curl -u/--user`、
+  `Authorization: Bearer/Basic`、`sk-proj-`/`sk-ant-`、AWS secret key、URL
+  userinfo、sshpass/docker login/redis-cli/openssl 内联口令；私钥清洗从只吞
+  BEGIN 行改为整段（此前密钥正文原样进入 `.pactkit/events/`——防泄露门禁
+  自己在制造持久化泄露）；含空格口令整段清洗；误拦收敛（`rg -n 'pwd='`
+  不再命中）。
+- **auth_gate**：`gh -R owner/repo pr create` 等子命令前置全局旗标此前不
+  命中；审计不再回显命令（同 secrets_gate）。
+- **基础设施**：`config._atomic_write_text` 并发写崩溃（与 utils 侧已修的
+  同源副本，统一到单一 `temp_sibling` 实现）；`enforcement._status_path`
+  gate 名路径逃逸守卫；YAML 解析的 TypeError/RecursionError 不再逃出 hook
+  且不再锁死修复；`pactkit clean` 对符号链接不再崩溃且不跟随。
+
+### Docs
+
+- README 计数改为从注册表**派生**并由守卫测试钉住（防漂移测试此前从错误的
+  注册表派生、认证了过时数字；commands/skills/rules 11/10/8 → 12/25/21）；
+  Copilot 列为第四宿主；新增 Troubleshooting 与受限/CI 环境段；
+  SECURITY.md 支持版本表必须覆盖当前发布版本（守卫钉住）；
+  CONTRIBUTING/CODE_OF_CONDUCT 的 404 仓库链接修正（贡献 clone 指向源码仓
+  pactkit-src，安全通告与 issue 指向 pactkit-public）。
+
 ## [2.26.1] - 2026-09-15
 
 ### Fixed
