@@ -1,0 +1,16 @@
+{
+  "gate": "commit_gate",
+  "status": "full",
+  "reason": "strategy=skip (doc-only change)",
+  "ts": "2026-09-18T08:01:11+00:00",
+  "outcome": "skip",
+  "details": {
+    "scope_ms": 25,
+    "decide_ms": 8,
+    "scope": "skip",
+    "policy": "fast",
+    "requires_full_suite": false,
+    "manual_full": false,
+    "selection": null
+  }
+}

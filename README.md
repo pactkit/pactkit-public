@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/pactkit/pactkit-src/main/docs/assets/logo.png" alt="PactKit" width="480" />
+  <img src="docs/assets/logo.png" alt="PactKit" width="480" />
 </p>
 
 <p align="center">
   <a href="https://pypi.org/project/pactkit/"><img src="https://img.shields.io/pypi/v/pactkit" alt="PyPI version" /></a>
   <a href="https://pypi.org/project/pactkit/"><img src="https://img.shields.io/pypi/pyversions/pactkit" alt="Python" /></a>
-    <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" /></a>
 </p>
 
 <p align="center"><strong>CODE is the Law. Data is the Truth. Prompt is ONLY instruction. AI is ONLY creativity.</strong></p>
@@ -94,8 +94,10 @@ Requires Python 3.10+ and one of:
 - [OpenCode](https://opencode.ai)
 - [Codex CLI](https://github.com/openai/codex)
 
-> The base install is dependency-light (pyyaml only). Host adapters are
-> opt-in extras — install the ones for the IDEs you use:
+> The base install ships the **gate chain**: `pre-commit` (Git hook
+> scheduling) and `detect-secrets` (credential detection) are standard
+> dependencies — no extra required for the default workflow. Host adapters
+> remain opt-in extras:
 
 ### Optional Extras
 
@@ -103,7 +105,7 @@ Requires Python 3.10+ and one of:
 pip install pactkit[opencode]    # OpenCode adapter
 pip install pactkit[codex]       # Codex CLI adapter
 pip install pactkit[lint]        # Includes ruff for lint gate
-pip install pactkit[visualize]   # Includes tree-sitter for AST analysis
+pip install pactkit[visualize]   # tree-sitter analyzers (Go/Java/TS complexity, layers)
 pip install pactkit[test]        # pytest + tomli (Python 3.10) for the test suite
 pip install pactkit[all]         # Everything above
 ```
@@ -251,7 +253,7 @@ skills, so `/project-plan` and `pactkit-visualize` deploy the same way) plus the
 
 | Skill | Type | Purpose |
 |-------|------|---------|
-| **pactkit-visualize** | Scripted | Code dependency graph (Mermaid .mmd): file-level, class-level, call-level |
+| **pactkit-visualize** | Scripted | Code analysis + MMD views rendered from the Codegraph index |
 | **pactkit-board** | Scripted | Sprint board operations: add story, update task, archive |
 | **pactkit-scaffold** | Scripted | File scaffolding: create spec, test files, git branches, skills |
 | **pactkit-report** | Scripted | Interactive HTML dashboard from Mermaid architecture graphs |
@@ -291,8 +293,8 @@ PactKit ships 55 deterministic CLI subcommands — operations that were previous
 | `pactkit regression` | Classify changes (SKIP/FULL/IMPACT) |
 | `pactkit test-map` | Map source files to test files |
 | `pactkit coverage-gate` | Enforce 3-tier coverage thresholds (80/50/block) |
-| `pactkit visualize` | Conditional graph regeneration (lazy mode) |
-| `pactkit query` | Query call graph via codegraph: `--callers`, `--callees`, `--chain [--down]` (requires `graph_provider: codegraph`) |
+| `pactkit visualize` | Render MMD diagrams **from the Codegraph index** (`--mode file\|class\|call\|module`, `--lazy`) |
+| `pactkit query` | Codegraph queries (the single source): `--callers`, `--callees`, `--chain`, `--impact`, `--explore` |
 | `pactkit lesson-append` | Append lesson with specificity check and dedup |
 | `pactkit invariants-refresh` | Update test count invariant in rules.md |
 | `pactkit sec-scope` | Detect security scope for changed files |
@@ -302,7 +304,7 @@ PactKit ships 55 deterministic CLI subcommands — operations that were previous
 | `pactkit lint-lessons` | Validate lessons.md structure |
 | `pactkit lint-testcase` | Validate test case structure |
 | `pactkit done-verify` | Archive honesty gate: requirement→test evidence chain, checkbox↔case consistency, status machine (blocks `/project-done` on FAIL) |
-| `pactkit commit-gate` | Pre-commit test gate with skip≠pass transparency; stack-aware (pytest/npm test/go test/mvn/gradle); counts via junitxml — immune to repo `addopts` verbosity tricks — with exit-code-truthful failure messages; PreToolUse hook + git pre-commit/pre-push channels, auto-installed per format |
+| `pactkit commit-gate` | Pre-commit test gate with skip≠pass transparency; stack-aware (pytest/npm test/go test/mvn/gradle); counts via junitxml — immune to repo `addopts` verbosity tricks; `--full` for the complete local suite; `--install --migrate` moves an existing project onto the pre-commit chain |
 | `pactkit gate` | Session context hooks (`--hook session-start/pre-compact`) + external-effect authorization (`pactkit gate <scope> [--ttl-minutes N]`) |
 | `pactkit deps` | External dependency check (`deps check`) and guided install (`deps install`) for node/codegraph/gh |
 | `pactkit schema config` | List every pactkit.yaml key with default, effective value, and source |
@@ -351,13 +353,61 @@ The hook layer enforces the rules prompt text can only state — protected branc
 | Gate | Blocks | Bypass (human/config only) |
 |------|--------|---------------------------|
 | `push_gate` | Direct push to a protected branch (default `main`/`master`) | `PACTKIT_ALLOW_DIRECT_PUSH=1` or `enforcement.allow_direct_push` |
-| `commit_gate` | Commits on protected branches (default) and RED test suites | same as push_gate; `develop` keeps the full-suite rule |
-| `spec_guard` | Editing a spec that has an active preflight receipt (Spec is Law during Act) | `PACTKIT_ALLOW_SPEC_EDIT=1` or `pactkit gate spec_edit` |
+| `commit_gate` | Commits on protected branches (default) and RED test suites | same as push_gate; `commit_gate.test_policy: fast` (default) scopes tests by mapping and marks `requires_full_suite` instead of escalating |
+| `spec_guard` | Editing a spec that has an active preflight receipt (Spec is Law during Act) | `PACTKIT_ALLOW_SPEC_EDIT=1` via the `!` prefix — human channel only; the agent cannot authorize this one |
 | `auth_gate` | External-effect commands (PR/release/publish/repo) until the user confirms | `pactkit gate <scope>` TTL token or `PACTKIT_AUTHORIZED=1` |
 | `secrets_gate` | Literal credential material in commands (env-var indirection is exempt) | `PACTKIT_ALLOW_SECRET=1` |
-| `tamper_guard` | Modifying enforcement artifacts (hooks, gate registrations, audit records) | `PACTKIT_ALLOW_CONFIG_EDIT=1` |
+| `tamper_guard` | Modifying enforcement artifacts (hooks, gate registrations, audit records, `pactkit.yaml`, settings env) | `PACTKIT_ALLOW_CONFIG_EDIT=1` |
 
 All blocks/bypasses are audited (`.pactkit/enforcement/`) and feed `pactkit stats` as gate telemetry (per-gate block counts, per-command invocation counts, authorization pairs) — the friction data that decides what to tune next.
+
+### Gate Chain: pre-commit + detect-secrets (3.0.0)
+
+The Git-hook layer is **pre-commit** (the upstream scheduler) plus
+**detect-secrets** (the upstream credential engine) — both standard install
+dependencies, so a plain `pip install` gets the full chain:
+
+| Layer | Owner | Notes |
+|-------|-------|-------|
+| Hook install & scheduling | pre-commit | generated config uses `repo: local` + `language: system` — no second hook environment |
+| Staged-file credential scan | detect-secrets | upstream `detect-secrets-hook`, reached through PactKit's entry; your baseline is honored, never auto-generated |
+| PactKit domain check | PactKit (thin entry) | branch policy, fast test selection, spec rules — one execution per commit |
+| Command-text credential scan | detect-secrets (in-process API) + a small shell-pattern set | no shell interpolation of secrets, no per-command CLI |
+| Push policy | PactKit (thin entry) | pre-push reads the target branch from `PRE_COMMIT_*` env; no tests run |
+
+The generated `.pre-commit-config.yaml` is **shareable**: entries name
+`pactkit` on PATH (never a machine-local absolute path), so the same file
+works for every developer, on Linux CI, and after a reinstall. Install
+PactKit per machine (`pipx install pactkit`); if it is missing, pre-commit
+stops the commit with `Executable \`pactkit\` not found` — a loud failure,
+never a silent pass.
+
+**pre-push limits** (pre-commit's own behaviour, printed by `pactkit doctor`
+and listed in the [support matrix](docs/guides/support-matrix.md)): a push
+carrying several refspecs surfaces only its **first** ref to the policy, and
+deleting a remote ref does not run the pre-push stage at all. Protected-branch
+deletion protection belongs on the server, not in a local hook.
+
+Migrate an existing project with `pactkit commit-gate --install --migrate`
+(preflight read-only: `pactkit commit-gate --install --check`) — it also
+rewrites entries an older PactKit recorded as absolute paths. The **first
+pactkit command in a project after an install or upgrade** runs a one-time
+project-level check (config drift, graph views, gate chain) and reports the
+exact next command for each finding — nothing is modified.
+
+### Codegraph is the single source of code facts (3.0.0)
+
+Code-relationship data comes from **Codegraph**: queries
+(`pactkit query --callers/--callees/--chain/--impact/--explore`), audit
+insights, and diagrams all read the same index. `pactkit visualize` **renders**
+`docs/architecture/graphs/*.mmd` as human-readable views from that index — no
+self-built scanner, and no index means a clear error (`pactkit sync` first),
+never a silent fallback.
+
+The legacy MMD tracing engine is retired. Your existing `.mmd` files are never
+deleted or rewritten for you — `pactkit doctor` lists verifiably-old tracing
+outputs with per-file cleanup advice, and manual diagrams (`system_design`,
+`workflow`, Spec diagrams) remain first-class.
 
 ## Deployment Architecture
 
@@ -436,6 +486,22 @@ Session context is generated locally at `.pactkit/context.md` and is ignored by 
 
 ### pactkit.yaml Configuration Reference
 
+**Which file is read** (per-host since 2026-09-18). Config resolves in layers,
+lowest precedence first:
+
+| Layer | Path | Applies to |
+|-------|------|-----------|
+| Shared | `pactkit.yaml` (repository root) | Every host, and everything with no host signal — a plain terminal, CI, and the Git hooks (pre-commit/pre-push are host-agnostic: there is no terminal to ask) |
+| Host | `.claude/pactkit.yaml` (Claude Code), `.codex/pactkit.yaml` (Codex), `.opencode/…`, `.github/…` (Copilot) | The matching terminal, overriding the shared layer key by key |
+
+So a Claude Code session reads `pactkit.yaml` **then** `.claude/pactkit.yaml`;
+a bare-terminal `git commit` reads `pactkit.yaml` alone. Put policy that must
+hold everywhere in the shared file, and per-terminal differences in the host
+file. `pactkit schema config` prints the host, the layers, and each key's
+source; `pactkit doctor` prints the layers too. Copies are no longer flattened
+automatically — `pactkit update --sync-config-copies` does that, explicitly,
+when you want one shared config after all.
+
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `stack` | string | auto-detected | Project stack (`python`, `node`, `go`, `java`) |
@@ -447,7 +513,7 @@ Session context is generated locally at `.pactkit/context.md` and is ignored by 
 | `enforcement` | object | see below | Gate configuration — `protected_branches` (`["main","master"]`), `allow_direct_push` (`false`), `tamper_guard` (`true`), `spec_guard` (`true`), `auth_gate` (`true`), `secrets_gate` (`true`), `auth_ttl_minutes` (`30`) |
 | `telemetry` | object | `enabled: true` | Local-only usage telemetry (`.pactkit/events/`). Set `enabled: false` to stop recording; gate verdicts are unaffected |
 | `exclude` | object | `{}` | Components to exclude (e.g., `exclude.agents: [agent-name]`) |
-| `visualize.graph_provider` | string | (absent) | Graph query backend. Set `codegraph` to use `.codegraph/codegraph.db` for `pactkit query`. Absent = grep `.mmd` |
+| `visualize.graph_provider` | string | (absent) | Code-relation backend. Absent/`auto` = Codegraph (the single source). Explicit `builtin_graph` returns a retirement notice — the MMD-based provider is gone |
 | `ci` | object | `provider: none` | CI/CD pipeline generation (`github`, `gitlab`, `none`). Sub-fields: `runner` (default: `ubuntu-latest`), `language_version` (default: auto per stack), `github_host` (GHE server address), `actions_ref` (GHE actions prefix) |
 | `issue_tracker` | object | `provider: none` | External issue tracker (`github`, `none`) |
 | `hooks` | object | disabled | Opt-in hook templates (pre-commit, post-test, pre-push) |
@@ -503,8 +569,38 @@ pactkit update    # Updates all deployed IDEs
 Use `pactkit update --format <name>` to update a single IDE.
 
 Rolling back is `pip install pactkit==<previous-version>` followed by
-`pactkit update`. `pactkit doctor` reports a deployment whose files no longer
-match the installed CLI, which is how a partial rollback shows up.
+`pactkit update` (pin the adapters to the same window in the same command).
+`pactkit doctor` reports a deployment whose files no longer match the
+installed CLI, which is how a partial rollback shows up.
+
+After an upgrade, the first pactkit command in each project runs a one-time
+project-level check (config drift, graph views, gate chain) and reports the
+exact next command for anything stale — see *Gate Chain* above. It is
+read-only and runs once per project per version.
+
+**Upgrading from a version older than 2.27.0?** Audit records written before
+2.27.0 could persist credential-shaped text — run the one-time sweep in the
+[credential incident response guide](docs/guides/credential-incident-response.md)
+before calling the upgrade done.
+
+### Upgrading to 3.0.0
+
+3.0.0 replaces the Git-hook layer and the credential engine, and changes how
+`pactkit.yaml` is found. Nothing runs automatically — here is the whole list:
+
+| What changed | What to do |
+|--------------|-----------|
+| **New standard dependencies** — `pre-commit` (the only Git-hook scheduler) and `detect-secrets` (the credential engine) now ship with the base install | Nothing: `pip install --upgrade pactkit` brings them. `pipx install pactkit` also works; `detect-secrets-hook` is reached through PactKit, so it does not need to be on your PATH |
+| **Old PactKit Git hooks are replaced** by pre-commit shims | Per project: `pactkit commit-gate --install --check` (read-only), then `--install --migrate`. Pristine old wrappers are backed up (`.pre-pactkit-migration`) and removed; hooks you edited yourself are never touched — the migration stops and lists them |
+| **`.pre-commit-config.yaml` entries are shareable** | Generated configs name `pactkit` on PATH instead of an absolute path, so they work for every developer and on CI. A migration rewrites the absolute entries an older PactKit wrote; `pactkit doctor` flags any that remain |
+| **Codegraph is the single source of code facts; MMD files are rendered views** | `pactkit sync` builds the index, `pactkit visualize` renders `docs/architecture/graphs/*.mmd` **from** it. The old self-built scanner is gone: with no index, `visualize` fails with a clear message instead of falling back. Old tracing-only outputs (`call_graph.db`, `reverse_call_graph.mmd`, `focus_file_graph.mmd`, `unified_graph.mmd`) are listed by `pactkit doctor` as cleanup candidates — never deleted for you |
+| **pre-push checks have framework limits** | A push with several refspecs surfaces only its **first** ref to the policy, and deleting a remote ref does not run the pre-push stage at all. Protected-branch deletion protection belongs on the server. `pactkit doctor` prints both limits |
+| **`pactkit.yaml` is read per terminal** | A shared `pactkit.yaml` at the repository root applies to every host and to everything with no host signal (plain terminal, CI, Git hooks); `.claude/`, `.codex/` etc. override it key by key. Put `enforcement.*` in the shared file. `pactkit schema config` prints the host and the layers |
+
+Rolling back a 3.0.0 upgrade: `pip install pactkit==2.27.0` (and the adapters in
+the same command), then `pactkit update`. To restore the old Git hooks as well,
+`pactkit commit-gate --uninstall-chain` removes PactKit's entries and shims
+without touching your own checks or your baseline.
 
 ## Restricted and CI Environments
 
@@ -532,9 +628,18 @@ rule health. `pactkit doctor --json` emits the same data for scripts.
 |---------|--------------|------------|
 | A commit is blocked with `commit-gate` | Tests are RED, or you are committing directly to a protected branch | Fix the tests, or push a feature branch and open a PR. `enforcement.allow_direct_push: true` is for single-maintainer repos that work directly on `main` |
 | A command is blocked with `push-gate` / `auth-gate` | Direct push to a protected branch, or an external-effect command (`gh pr create`, `npm publish`, …) without authorization | Run `pactkit gate authorize <scope>` after the user agrees, or have the user run it themselves |
+| A spec edit is blocked with `spec-guard` during Act | The spec has a live preflight receipt (Spec is Law) — this key is deliberately not agent-issuable | Finish the implementation, route the change through `/project-plan`, or run the edit yourself with the `!` prefix and `PACTKIT_ALLOW_SPEC_EDIT=1` |
 | Gates behave inconsistently across teammates | Deployments are stale — each clone updates independently | `pactkit update` in that project, then `pactkit doctor` |
+| Different gates fire on different hosts | OpenCode/Copilot only get the git-hook layer — the four pre-tool gates do not exist there | See the [support matrix](docs/guides/support-matrix.md); put the hard controls (branch protection, required CI) server-side |
 | `pactkit doctor` reports adapter skew | `pactkit-codex`/`-opencode` version does not match core | Upgrade the adapter extras; core and adapters are version-pinned to each other |
 | The gate blocks work and you believe it is wrong | Genuine gate bug | `PACTKIT_ALLOW_*` env vars (see the gate table above) are the human channel; report the false positive with `pactkit stats` output |
+
+Further reading: the [support matrix](docs/guides/support-matrix.md) (hosts ×
+gates × platforms, what each host actually gets), the [credential incident
+response guide](docs/guides/credential-incident-response.md) (pre-2.27.0
+audit-record sweep), and the [release & recovery
+runbook](docs/guides/release-recovery-runbook.md) (second-person drill —
+build, verify, release, recover from the shipped artifacts).
 
 ## Contributing
 

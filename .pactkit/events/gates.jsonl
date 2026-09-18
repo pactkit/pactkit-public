@@ -1,0 +1,2 @@
+{"ts":"2026-09-15T16:02:28.150+00:00","story_id":null,"run_id":null,"event":"authorization_granted","step_id":null,"status":null,"detail":{"scope":"repo","ttl_minutes":30}}
+{"ts":"2026-09-18T08:01:12.122+00:00","story_id":null,"run_id":null,"event":"authorization_granted","step_id":null,"status":null,"detail":{"scope":"repo","ttl_minutes":30}}

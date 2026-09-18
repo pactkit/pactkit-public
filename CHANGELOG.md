@@ -1,5 +1,82 @@
 # Changelog
 
+## [3.0.0] - 2026-09-18
+
+架构瘦身收口：Git hook 层与凭据引擎换成上游组件，代码关系统一到
+Codegraph，配置读取按终端分层。**升级前请读「迁移」一节——这是主版本
+变更，旧 hook 需要显式迁移。**
+
+### 迁移 (Upgrading to 3.0.0)
+
+- **新增标准依赖**：`pre-commit`（唯一 Git hook 调度器）与
+  `detect-secrets`（凭据引擎）随基础安装发布。`pip install --upgrade
+  pactkit` 即得；`detect-secrets-hook` 经 PactKit 转发，**不需要**在 PATH 上。
+- **旧 PactKit Git hook 需显式迁移**（不自动切换）：每项目
+  `pactkit commit-gate --install --check` 先只读预检，再
+  `--install --migrate`。可确认未被修改的旧 wrapper 备份
+  （`.pre-pactkit-migration`）后由 pre-commit 替换；用户改过的 hook
+  一律不碰，迁移停下并列出冲突。
+- **`.pre-commit-config.yaml` 不再写机器本地绝对路径**：entry 只写 PATH
+  上的 `pactkit`，因此同一份配置对每个开发者、Linux CI 都成立。迁移会把
+  旧版写下的绝对路径改写为共享形态；`pactkit doctor` 会点名仍存在的。
+- **回滚**：`pip install pactkit==2.27.0`（适配器同一条命令钉同窗口）+
+  `pactkit update`；要一并撤掉 Git hook，
+  `pactkit commit-gate --uninstall-chain` 只删 PactKit 条目与 shim，
+  不碰你自己的检查与 baseline。
+
+### Changed (有意的行为变更)
+
+- **配置按终端分层读**（owner 2026-09-18）：仓库根 `pactkit.yaml` 是
+  **共享层**——所有宿主，以及没有宿主信号的进程（裸终端、CI、宿主无关的
+  Git hook）读它；`.claude/`、`.codex/` 等宿主副本**按键覆盖**共享层。
+  此前是固定优先级列表（opencode > codex > copilot > classic），意味着
+  "读哪份"不由用户决定：在自己终端里改的配置可能完全不被读到。无宿主
+  信号时只读共享层，不再叠一层任意的宿主副本；真正歧义（无共享层 + 多份
+  分歧的宿主副本）会在 stderr 明确报出。`pactkit schema config` 打印
+  host / layers / 每个键的来源。
+- **副本不再自动抹平**：分层之后 `sync_config_copies` 会把各终端的差异
+  覆盖掉，因此不再随 `init`/`update` 自动执行，改为显式
+  `pactkit update --sync-config-copies`。
+- **spec_edit 授权 token 移除——Spec 编辑的人工通道收窄**（astra 二轮评估
+  P6，owner 决策 2026-09-17）：`pactkit gate authorize spec_edit` 此前是
+  agent 可自行调用的钥匙，与 L1 契约「L1 规则不可在对话中豁免，sanctioned
+  channel 是人工 `!` 通道」矛盾。现在 spec_edit 移出可授权 scope（签发与
+  校验一并移除，伪造/遗留 token 不再生效），拦截文案只指人工通道
+  （`!` 前缀 + `PACTKIT_ALLOW_SPEC_EDIT=1`）或仓库 owner 关闸。
+  Plan 阶段自由写 Spec 不受影响；Act 中途合法修改需用户执行一条命令。
+
+### Added
+
+- **Codegraph 是代码事实的唯一源，MMD 是渲染视图**：`pactkit sync` 建索引，
+  `pactkit visualize` 从索引渲染 `docs/architecture/graphs/*.mmd`；audit
+  洞察改由同一索引取数。自研扫描器永久退役——没有索引时 `visualize`
+  明确失败，不回退。
+- **首次运行检查**：安装/升级后每个项目第一次调用 pactkit 时，跑一次只读
+  的项目级检查（配置漂移 / 图视图 / 门禁链），每条发现给出精确的下一步
+  命令；报告走 stderr，只报告不改文件。
+- **pre-push 能力边界写入 doctor 与支持矩阵**：多 refspec 的 push 只有
+  **第一个** ref 到达策略；删除远端 ref 完全不触发 pre-push。这是
+  pre-commit 自身行为，不另造第二个调度器；受保护分支的删除防护依赖
+  服务端规则。
+
+### Fixed
+
+- **卸载不再误删用户配置**：旧实现按文本行删 hook，"正在跳过"标志只有
+  `repos:`/`- repo:` 能清除——排在我们最后一个 hook 之后的顶层键
+  （`fail_fast:` 等）会被一起吃掉；更糟的是把 YAML 解析失败当成空配置
+  然后删掉配置文件。现在解析失败即停，结构删 + 行级编辑 + 重新解析验证。
+- **首次安装部分失败的回滚补全**：旧回滚只恢复被移除的旧 wrapper；项目
+  原本没有 hook 时，装完 pre-commit、装 pre-push 失败会留下一个新建的
+  shim（配置已被回滚删除），此后每次提交都失败。现在同时移除本次新建的
+  hook 文件。
+- **合并路径补上 baseline 关联**：`generate_config` 会写
+  `args: [--baseline, .secrets.baseline]`，但"合并进已有配置"这条路径手写
+  自己的凭据块丢了这行——baseline 留在磁盘上却不再被使用，已审阅过的
+  测试数据重新挡住提交。两条路径现在共用同一份 hook 定义。
+- **发布门禁不再可能选中日常验收**：同一 commit 现在同时有日常（单版本）
+  与发布（四版本）两条验收，按 SHA 取第一条 = 取"API 先列出哪条"；改为
+  匹配本 tag 的 push 事件 + SHA。
+
 ## [2.27.0] - 2026-09-17
 
 > 安全加固版本：六轮对抗评审修复 34 条门禁缺陷 + 项目契约生命周期
