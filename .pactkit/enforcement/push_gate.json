@@ -1,6 +1,0 @@
-{
-  "gate": "push_gate",
-  "status": "full",
-  "reason": "direct push to 'main' allowed by enforcement.allow_direct_push",
-  "ts": "2026-09-17T03:22:13+00:00"
-}
