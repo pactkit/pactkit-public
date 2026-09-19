@@ -12,7 +12,7 @@
 
 > **PactKit** (Pact 契约 + Kit) is a lightweight dev-enablement scaffold: it gives AI coding assistants the standards, specs and methods of a disciplined engineering workflow, without getting in the way. Ordinary questions and ordinary coding never activate the workflow — you opt in per task. There is no admin plane, no central control, and nothing that cannot be uninstalled.
 >
-> Deterministic operations run as code, not prompts (CODE is the Law). Decisions are grounded in data, not memory (Data is the Truth). 55 CLI subcommands, 9 specialized agents, 12 commands, 25 skills, and a Plan-Act-Check-Done lifecycle you invoke when you want it. One `pip install` deploys to all 4 supported IDEs (adapters are opt-in extras).
+> Deterministic operations run as code, not prompts (CODE is the Law). Decisions are grounded in data, not memory (Data is the Truth). 56 CLI subcommands, 9 specialized agents, 12 commands, 25 skills, and a Plan-Act-Check-Done lifecycle you invoke when you want it. One `pip install` deploys to all 4 supported IDEs (adapters are opt-in extras).
 
 ### Supported AI Tools
 
@@ -269,7 +269,7 @@ skills, so `/project-plan` and `pactkit-visualize` deploy the same way) plus the
 
 ## CLI Subcommands
 
-PactKit ships 55 deterministic CLI subcommands — operations that were previously delegated to AI prompts are now enforced in Python code (the "C" in P.A.C.T.):
+PactKit ships 56 deterministic CLI subcommands — operations that were previously delegated to AI prompts are now enforced in Python code (the "C" in P.A.C.T.):
 
 | Command | Purpose |
 |---------|---------|
@@ -289,6 +289,7 @@ PactKit ships 55 deterministic CLI subcommands — operations that were previous
 | `pactkit generate-id [--type story\|hotfix\|bug]` | Generate a decentralized time-prefixed item ID |
 | `pactkit context` | Generate `context.md` from project state |
 | `pactkit clean` | Remove stack-specific temp artifacts |
+| `pactkit secrets-baseline` | Surgically realign `.secrets.baseline` after a golden refresh changed a recorded digest — updates only the entries whose hash actually changed, preserves key order / indent / no-trailing-newline / `generated_at`, and never accepts a new finding on its own (it reports them for review) |
 | `pactkit lint` | Stack-aware lint with auto-fix and blocking modes |
 | `pactkit regression` | Classify changes (SKIP/FULL/IMPACT) |
 | `pactkit test-map` | Map source files to test files |

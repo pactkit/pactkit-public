@@ -1,5 +1,65 @@
 # Changelog
 
+## [3.0.1] - 2026-09-19
+
+分发收口 + 门禁修复。plugin/marketplace 通道整体退役，分发只剩 pip；
+OpenCode 补上 pre-tool 门禁通道。**如果你是插件用户，请先读「迁移」一节。**
+
+### 迁移 (Upgrading to 3.0.1)
+
+- **plugin / marketplace 分发通道已移除。** `pactkit init --format plugin`
+  与 `--format marketplace` 不再存在。如果你是通过 Claude Code 的
+  `/plugin marketplace add pactkit/claude-code-plugin` 安装的，那个仓库
+  已归档、不会再更新——卸载后改用 pip：
+
+  ```bash
+  claude plugin uninstall pactkit    # 在 Claude Code 中
+  pip install pactkit && pactkit init
+  ```
+
+- 四个宿主现在各自只有一条通道：Claude Code 由核心包自带，OpenCode /
+  Codex / Copilot 各装自己的 adapter（`pactkit[opencode]`、
+  `pactkit[codex]`、`pactkit-copilot`）。
+- 已有 pip 安装无需其他动作，`pactkit update` 照常。
+
+### Removed
+
+- **plugin/marketplace 生成链路**：`--format plugin|marketplace`、
+  `PluginDeployer`、`_deploy_plugin`、`_deploy_marketplace`、
+  `plugin_manifest.py` 全部删除。
+- **`_legacy_prefix` / `_legacy_opencode` 参数线**：它们只服务于 plugin
+  模式，穿在 `_deploy_skills` / `_deploy_agents` / `_deploy_commands` 上，
+  一并移除——每个核心部署函数从此少一条分支。
+
+### Added
+
+- **OpenCode pre-tool 门禁通道**：门禁插件全局部署，靠激活标记按项目生效、
+  fail-closed。负载翻译下沉到 Python，core 的绕过回归用例现在覆盖所有宿主通道。
+- **组织基线 GPG 分离签名**：来源可信 + fail-closed。
+- `pactkit secrets-baseline` 支持外科式刷新。
+
+### Fixed
+
+- **门禁矩阵两层契约**：按「层 × 门」陈述事实，部分覆盖必须在通知里说出来
+  ——不能把「覆盖一半」读成「检查过了」。
+- **未知可写工具的兜底改为拒绝**，不再半判：拿不到完整参数时给出确定结论
+  比不判更糟，因为它把没检查读成了检查通过。
+- **OpenCode `edit` 的 `replaceAll` 未映射**：门禁按单次替换模拟，真实编辑
+  改了全部匹配时弱化判定被绕过（OpenCode 放行、原生拦下）。
+- **Check 剧本自锁解除**：`TOOL RESTRICTION` 按路径区分，用例产物不再被挤到
+  story 被标 done 之后。
+- **`secrets_baseline` 同行多条目互相覆盖**，且会自我掩蔽（破坏后重跑报
+  already current，实测据此误报通过）。
+- 项目级 agent 指令不再 `@import` 一个未生成的文件（三个 adapter 模板 +
+  core 两个文件）；该文件自 2026-08-22 起就没有任何东西在写。
+- 配置副本同步改到 deploy 之后；矩阵通知的「adapter 装了没」判据用错了源，
+  copilot 被误报未安装。
+
+### Changed (有意的行为变更)
+
+- `board.py` 的 legacy 簇收口：497 → 224 行。
+- `cli.py` 的 99 个静态分析误报归零——结构性收窄，零抑制。
+
 ## [3.0.0] - 2026-09-18
 
 架构瘦身收口：Git hook 层与凭据引擎换成上游组件，代码关系统一到
