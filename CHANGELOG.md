@@ -1,5 +1,89 @@
 # Changelog
 
+## [3.0.3] - 2026-09-21
+
+**证据链路的三个边界修复。** 3.0.2 引入的「测量与记录」链路有三处会给出
+错误结论，其中一处会**销毁已有记录**。升级即可，无需迁移动作。
+
+### Fixed
+
+- **已提交的越界改动会从范围检查里消失。** 范围完整性只比对 `git diff HEAD`
+  （工作区状态），committed diff 那半没有实现——于是**提交一次，越界文件就
+  从测量范围里消失**，`completion_ready` 从 `false` 翻成 `true`。多次提交的
+  Story、提交后的 Check、会话恢复后的检查都会得到错误结论。
+
+  现在起点绑定在 Act 的 preflight receipt 上（代码触点，不靠人记），检查
+  起点到工作区的完整变化。起点是**粘性**的：重跑 preflight 不会前移。找不到
+  可信起点时如实报 `not-measured`，而不是报「无越界」。
+
+- **「未测量」能生成 green 记录。** `pactkit evidence-measure --record` 调
+  `record_verification()` 时不传 `outcome`，取了默认值 `"green"`——一个测试
+  都没跑也记成「回归通过」。更深一层：判定函数只比对内容指纹，从不检查记录里
+  有没有回归证据，所以那条记录会发放 `reuse` 许可，**下游据此真的跳过回归**。
+
+  现在 `outcome` 必填、测量走独立入口、复用要求 `outcome == "green"`；失败的
+  记录路由到全量重验而不是最轻的分类路径。
+
+- **不同证据写入同一 Story 记录会互相覆盖。** 写入整文件替换：写完负向控制
+  再写回归记录，前者消失；反之亦然。记录现在按证据类型分节
+  （`regression` / `measurement`），各自绑定自己测得时的代码状态。
+
+- **升级路径上的记录不会被销毁。** 上一版之前写出的记录是**扁平**形状（回归
+  字段在顶层、测量块叫 `evidence`）——只认新形状的合并逻辑会让这类记录在
+  一次写入后静默丢失一半。合并现在同时认两种形状。
+
+### Notes
+
+- 升级：`pip install -U pactkit && pactkit update`。
+- 三个 adapter（opencode / codex / copilot）同步发布 3.0.3。
+
+## [3.0.2] - 2026-09-21
+
+**两条 CRITICAL 门禁修复。** 如果你用 PactKit 发过版，或者照着拦截文案
+尝试过人工旁路，这一版值得升级。
+
+### Fixed
+
+- **发布门禁可以在一个测试都没跑的情况下报 PASS。** Pre-Tag Gate 的
+  "Run tests" 那行指向的是 `pactkit regression`——它是个**分类器**，
+  在 SKIP / IMPACT 两条路径上都 exit 0。于是紧跟其后的
+  "If either fails" 永远不会因为测试而触发。现在该行指向真正的测试运行器，
+  并显式标注 `pactkit regression` 只做分类。
+
+- **人工旁路文案给出的形式做不到。** 拦截消息曾建议
+  `PACTKIT_ALLOW_SECRET=1 <command>` 这类内联前缀。实测：旁路判据读的是
+  **钩子进程自己的**环境变量，而 PreToolUse 钩子在命令执行**之前**由宿主
+  以会话环境启动——内联变量只作用于子进程，**结构性到不了**。照文案做会
+  被继续拦下，命令一次都没跑起来。
+
+  现在全部出口经由单一渲染器 `bypass_message.human_channel()` 产出，按
+  「面」分别说清：PreToolUse 面（内联做不到，请在会话外终端执行、或会话
+  启动前 export）与 git hook 面（终端里 `VAR=1 git <cmd>` **可以**，git
+  会把它传给自己的 hook）。两个面机制不同，不再一概而论。
+
+- **`pactkit doctor` 的两个表面会对同一棵树给出相反结论。** text 模式
+  exit 1、JSON 模式 exit 0。现在两处共用同一个 verdict 来源。
+
+- **`done-verify` 把通配符当成声明文件。** `_real_path` 只挡花括号是它自己
+  规则的不完整实现，现在通配符同样被拒。
+
+- **audit 的「有测试吗」判定靠猜文件名**，产生 40 个假阴性与一批垃圾任务。
+  现在改用图证据（调用边 ∪ 导入边 ∪ 命名约定）三级阶梯，40 个假阴性清零。
+
+### Added
+
+- **`pactkit evidence-measure`**：把「范围完整性」与「变异验证（negative
+  control）」从散文变成可执行的测量。negative control 同时控住三件事——
+  变异前基线必须绿、每个文件跑完必须还原、只把退出码 1 算抓到——缺任何
+  一件都会产出 false pass。
+- **R8/R9 两条 MUST 接上 `delivery_evidence`**，从散文变成 code touchpoint。
+
+### Notes
+
+- 升级无需任何动作：`pip install -U pactkit && pactkit update`。
+- `pactkit snapshot` 在有图的项目上行为不变；无图时会明确说明「没有可快照
+  的图」而不是报一个 ✅（MMD 机器图已退役，无图是正常状态）。
+
 ## [3.0.1] - 2026-09-19
 
 分发收口 + 门禁修复。plugin/marketplace 通道整体退役，分发只剩 pip；

@@ -1,0 +1,1147 @@
+{
+  "pactkit_version": "3.0.1",
+  "format": "copilot",
+  "workflow_continuation": {
+    "finish_guard_supported": false,
+    "auto_resume_available": false,
+    "guarantee_level": "portable",
+    "execution_mode": "portable",
+    "protocol_version": 1,
+    "stop_hook_required": false,
+    "e2e_validated": false
+  },
+  "host_capabilities": {
+    "protocol_version": 1,
+    "verification_source": "native_current_session",
+    "instructions_discovery": true,
+    "skills_discovery": true,
+    "structured_results": false,
+    "tool_execution": false,
+    "approval": false,
+    "lifecycle_events": false,
+    "thread_resume": false,
+    "turn_steer": false,
+    "background_execution": false,
+    "cancellation": false,
+    "e2e_validated": false,
+    "execution_mode": "portable",
+    "manual_resume": false
+  },
+  "component_scope": "default",
+  "skills": [
+    "pactkit-analyze",
+    "pactkit-audit",
+    "pactkit-board",
+    "pactkit-doctor",
+    "pactkit-draw",
+    "pactkit-garden",
+    "pactkit-release",
+    "pactkit-report",
+    "pactkit-review",
+    "pactkit-scaffold",
+    "pactkit-status",
+    "pactkit-trace",
+    "pactkit-visualize"
+  ],
+  "portable_methods": [],
+  "commands": [
+    "project-act",
+    "project-check",
+    "project-clarify",
+    "project-debug",
+    "project-design",
+    "project-done",
+    "project-hotfix",
+    "project-init",
+    "project-plan",
+    "project-pr",
+    "project-release",
+    "project-sprint"
+  ],
+  "agents": [
+    "code-explorer",
+    "product-designer",
+    "qa-engineer",
+    "repo-maintainer",
+    "security-auditor",
+    "senior-developer",
+    "system-architect",
+    "system-medic",
+    "visual-architect"
+  ],
+  "rule_schema_version": 2,
+  "rule_loading": {
+    "primary_hosts": [
+      "classic",
+      "codex",
+      "opencode"
+    ],
+    "compatibility_hosts": [
+      "copilot"
+    ],
+    "layout": "shared_on_demand_rules",
+    "global": [
+      "runtime"
+    ],
+    "command": {
+      "project-init": [
+        "runtime",
+        "pdca-lifecycle",
+        "phase-init",
+        "shared-execution"
+      ],
+      "project-plan": [
+        "runtime",
+        "pdca-lifecycle",
+        "phase-plan",
+        "shared-execution"
+      ],
+      "project-clarify": [
+        "runtime",
+        "pdca-lifecycle",
+        "phase-clarify"
+      ],
+      "project-act": [
+        "runtime",
+        "pdca-lifecycle",
+        "phase-act",
+        "shared-execution",
+        "spec-preflight"
+      ],
+      "project-check": [
+        "runtime",
+        "pdca-lifecycle",
+        "phase-check",
+        "shared-execution"
+      ],
+      "project-done": [
+        "runtime",
+        "pdca-lifecycle",
+        "phase-done",
+        "shared-execution",
+        "git-workflow"
+      ],
+      "project-release": [
+        "runtime",
+        "pdca-lifecycle",
+        "phase-release",
+        "git-workflow"
+      ],
+      "project-pr": [
+        "runtime",
+        "pdca-lifecycle",
+        "phase-pr",
+        "git-workflow"
+      ],
+      "project-hotfix": [
+        "runtime",
+        "pdca-lifecycle",
+        "phase-hotfix",
+        "shared-execution"
+      ],
+      "project-design": [
+        "runtime",
+        "pdca-lifecycle",
+        "phase-design"
+      ],
+      "project-sprint": [
+        "runtime",
+        "pdca-lifecycle",
+        "sprint-orchestrator",
+        "shared-execution"
+      ],
+      "project-debug": [
+        "runtime",
+        "pdca-lifecycle",
+        "phase-debug",
+        "shared-execution"
+      ]
+    },
+    "conditional": {
+      "project-init": [
+        "sectional-heuristics"
+      ],
+      "project-plan": [
+        "external-tools",
+        "capability-design",
+        "engineering-index",
+        "sectional-heuristics"
+      ],
+      "project-act": [
+        "external-tools",
+        "capability-design",
+        "engineering-index"
+      ],
+      "project-check": [
+        "external-tools"
+      ],
+      "project-design": [
+        "external-tools",
+        "capability-design",
+        "sectional-heuristics"
+      ]
+    },
+    "risk": {
+      "source": "change_risk_profile",
+      "max_guides": 3
+    }
+  },
+  "rules": [],
+  "rule_clauses": {
+    "runtime.activation": {
+      "level": "required",
+      "trigger": "when deciding whether PactKit phase rules apply",
+      "skip_when": [
+        "no PactKit workflow is invoked or requested"
+      ],
+      "evidence": [
+        "the user explicitly invoked or requested the workflow"
+      ],
+      "failure": "incomplete_continue",
+      "override": "the user's latest explicit workflow choice controls activation"
+    },
+    "runtime.current-session": {
+      "level": "default",
+      "trigger": "while executing an active workflow",
+      "skip_when": [
+        "the user requests another supported execution model"
+      ],
+      "evidence": [
+        "work continues in the current host session unless the user chooses otherwise"
+      ],
+      "failure": "record_deviation",
+      "override": "the user may explicitly request another supported execution model"
+    },
+    "runtime.language": {
+      "level": "advisory",
+      "trigger": "when producing user-facing output",
+      "skip_when": [
+        "the user requests another language"
+      ],
+      "evidence": [
+        "output matches the user's language"
+      ],
+      "failure": "warn_continue",
+      "override": "the user may request another language"
+    },
+    "runtime.evidence-reuse": {
+      "level": "default",
+      "trigger": "before repeating a completed verification",
+      "skip_when": [
+        "inputs changed",
+        "freshness is uncertain",
+        "the user requests a rerun"
+      ],
+      "evidence": [
+        "the evidence input fingerprint still matches current inputs"
+      ],
+      "failure": "record_deviation",
+      "override": "rerun when freshness is uncertain or the user requests it"
+    },
+    "safety.credentials": {
+      "level": "hard",
+      "trigger": "before exposing or persisting a secret",
+      "skip_when": [
+        "the content is verified non-secret test data"
+      ],
+      "evidence": [
+        "no credential or secret is disclosed or committed"
+      ],
+      "failure": "block_exact_action",
+      "override": "not overridable beyond platform policy"
+    },
+    "safety.authorization": {
+      "level": "hard",
+      "trigger": "before an external side effect such as push, PR, publish, release, or message",
+      "skip_when": [
+        "the action is read-only or confined to the authorized local workspace"
+      ],
+      "evidence": [
+        "current user authorization covers the exact action and target"
+      ],
+      "failure": "block_exact_action",
+      "override": "explicit current authorization is required"
+    },
+    "safety.irreversible-damage": {
+      "level": "hard",
+      "trigger": "before a destructive or materially irreversible operation",
+      "skip_when": [
+        "the operation is read-only or safely reversible"
+      ],
+      "evidence": [
+        "the exact target is resolved and recovery or authorization is established"
+      ],
+      "failure": "block_exact_action",
+      "override": "explicit authorization cannot override platform safety"
+    }
+  },
+  "phase_contracts": {
+    "project-init": {
+      "phase": "bootstrap",
+      "entry": "explicit initialization request",
+      "inputs": [
+        "project root",
+        "selected host profile"
+      ],
+      "outputs": [
+        "project governance scaffold"
+      ],
+      "invariants": [
+        "preserve existing project and user files"
+      ],
+      "completion_evidence": [
+        "required project markers exist"
+      ],
+      "failure_semantics": "incomplete_continue",
+      "allowed_next": [
+        "project-plan",
+        "project-design"
+      ],
+      "external_effects": []
+    },
+    "project-plan": {
+      "phase": "plan",
+      "entry": "explicit planning request for one bounded change",
+      "inputs": [
+        "current user intent",
+        "repository evidence"
+      ],
+      "outputs": [
+        "Spec",
+        "Story record",
+        "change risk profile"
+      ],
+      "invariants": [
+        "requirements are testable and scope is explicit",
+        "the Spec never instructs the implementer to amend it during Act (findings land in the commit message or a docs/ note)"
+      ],
+      "completion_evidence": [
+        "Spec lint passes",
+        "requirements map to acceptance criteria"
+      ],
+      "failure_semantics": "incomplete_continue",
+      "allowed_next": [
+        "project-act"
+      ],
+      "external_effects": []
+    },
+    "project-clarify": {
+      "phase": "clarify",
+      "entry": "explicit clarification request or material ambiguity",
+      "inputs": [
+        "current request",
+        "known constraints"
+      ],
+      "outputs": [
+        "clarified brief"
+      ],
+      "invariants": [
+        "unanswered questions remain visible and never become invented facts"
+      ],
+      "completion_evidence": [
+        "decisions and assumptions are distinguishable"
+      ],
+      "failure_semantics": "incomplete_continue",
+      "allowed_next": [
+        "project-plan"
+      ],
+      "external_effects": []
+    },
+    "project-act": {
+      "phase": "act",
+      "entry": "explicit implementation request with a usable objective",
+      "inputs": [
+        "current request",
+        "Spec when Spec-bound",
+        "declared inputs"
+      ],
+      "outputs": [
+        "implementation",
+        "behavioral tests"
+      ],
+      "invariants": [
+        "scope integrity",
+        "edit the source of truth",
+        "safe work remains available",
+        "guidance gaps are closed by need, not by a fixed read count"
+      ],
+      "completion_evidence": [
+        "Spec alignment",
+        "fresh adequate behavioral tests",
+        "regression classification"
+      ],
+      "failure_semantics": "incomplete_continue",
+      "allowed_next": [
+        "project-check",
+        "project-done"
+      ],
+      "external_effects": []
+    },
+    "project-check": {
+      "phase": "check",
+      "entry": "explicit verification or review request",
+      "inputs": [
+        "implementation diff",
+        "Spec and test evidence"
+      ],
+      "outputs": [
+        "evidence-backed verdict"
+      ],
+      "invariants": [
+        "review is read-only unless the user also requests repair",
+        "verification setup matches the Spec's actor and environment",
+        "test environment provenance is confirmed (running code == code under test)",
+        "a defect finding sweeps its class — same-pattern sites are checked before a pass verdict",
+        "user-path validation is distinguished from Spec-conformance verification — key scenarios run through the real end-user path, not a privileged one",
+        "reuse and not-applicable claims are checked independently of the load trace"
+      ],
+      "completion_evidence": [
+        "security, quality, test adequacy, freshness, and Spec alignment assessed",
+        "test environment provenance is confirmed"
+      ],
+      "failure_semantics": "incomplete_continue",
+      "allowed_next": [
+        "project-act",
+        "project-done"
+      ],
+      "external_effects": []
+    },
+    "project-done": {
+      "phase": "done",
+      "entry": "explicit finalization request for verified work",
+      "inputs": [
+        "fresh verification evidence",
+        "project governance state"
+      ],
+      "outputs": [
+        "consistent project records",
+        "optional commit"
+      ],
+      "invariants": [
+        "reuse fresh evidence and disclose every remaining gap",
+        "no engineering-guide selection overrides a verification decision's meaning"
+      ],
+      "completion_evidence": [
+        "required verification is adequate for the Spec's actor and environment, and current",
+        "status projections agree"
+      ],
+      "failure_semantics": "incomplete_continue",
+      "allowed_next": [],
+      "external_effects": [
+        "commit",
+        "archive"
+      ]
+    },
+    "project-release": {
+      "phase": "release",
+      "entry": "explicit release request",
+      "inputs": [
+        "verified version",
+        "changelog",
+        "artifacts"
+      ],
+      "outputs": [
+        "release-ready artifacts"
+      ],
+      "invariants": [
+        "publishing requires exact current authorization"
+      ],
+      "completion_evidence": [
+        "version and artifact provenance agree"
+      ],
+      "failure_semantics": "incomplete_continue",
+      "allowed_next": [],
+      "external_effects": [
+        "tag",
+        "publish",
+        "release"
+      ]
+    },
+    "project-pr": {
+      "phase": "pr",
+      "entry": "explicit pull-request request",
+      "inputs": [
+        "reviewable branch",
+        "fresh test evidence"
+      ],
+      "outputs": [
+        "reviewable PR"
+      ],
+      "invariants": [
+        "push and PR creation require exact current authorization"
+      ],
+      "completion_evidence": [
+        "summary, risk, and test evidence are complete"
+      ],
+      "failure_semantics": "incomplete_continue",
+      "allowed_next": [],
+      "external_effects": [
+        "push",
+        "pull request"
+      ]
+    },
+    "project-hotfix": {
+      "phase": "hotfix",
+      "entry": "explicit bounded repair request",
+      "inputs": [
+        "reproduced symptom",
+        "affected scope"
+      ],
+      "outputs": [
+        "minimal repair",
+        "focused regression test"
+      ],
+      "invariants": [
+        "escalate when product behavior or architecture expands"
+      ],
+      "completion_evidence": [
+        "reported failure is fixed",
+        "affected tests pass"
+      ],
+      "failure_semantics": "incomplete_continue",
+      "allowed_next": [
+        "project-check",
+        "project-done"
+      ],
+      "external_effects": []
+    },
+    "project-design": {
+      "phase": "design",
+      "entry": "explicit greenfield or multi-story product design request",
+      "inputs": [
+        "product objective",
+        "users and constraints"
+      ],
+      "outputs": [
+        "PRD",
+        "decomposed Specs",
+        "Story records"
+      ],
+      "invariants": [
+        "outcomes and non-goals remain explicit"
+      ],
+      "completion_evidence": [
+        "scope, risks, and dependencies are traceable"
+      ],
+      "failure_semantics": "incomplete_continue",
+      "allowed_next": [
+        "project-plan",
+        "project-act"
+      ],
+      "external_effects": []
+    },
+    "project-sprint": {
+      "phase": "sprint",
+      "entry": "explicit request to execute an ordered PDCA sequence",
+      "inputs": [
+        "selected Story or confirmed wave"
+      ],
+      "outputs": [
+        "ordered phase outcomes"
+      ],
+      "invariants": [
+        "exactly one phase capsule is active at a time"
+      ],
+      "completion_evidence": [
+        "each entered phase meets its own completion evidence"
+      ],
+      "failure_semantics": "incomplete_continue",
+      "allowed_next": [],
+      "external_effects": []
+    },
+    "project-debug": {
+      "phase": "debug",
+      "entry": "explicit diagnosis request",
+      "inputs": [
+        "observable symptom",
+        "bounded target"
+      ],
+      "outputs": [
+        "reproduced symptom",
+        "ranked root-cause conclusion"
+      ],
+      "invariants": [
+        "test hypotheses against evidence before proposing a cause"
+      ],
+      "completion_evidence": [
+        "cause and uncertainty are stated"
+      ],
+      "failure_semantics": "incomplete_continue",
+      "allowed_next": [
+        "project-hotfix",
+        "project-plan"
+      ],
+      "external_effects": []
+    }
+  },
+  "guides": {
+    "concurrency.md": {
+      "trigger": "Concurrent execution or shared mutable state is in scope.",
+      "questions": [
+        "Is work I/O-bound or CPU-bound?",
+        "Who owns ordering and cancellation?"
+      ],
+      "safe_invariants": [
+        "Bound workers and queues.",
+        "Synchronize shared mutable state and expose failures."
+      ],
+      "defaults": [
+        "Reuse the project executor with configurable limits."
+      ],
+      "alternatives": [
+        "Use sequential execution when load does not justify concurrency."
+      ],
+      "evidence": [
+        "Contention, ordering, cancellation, and shutdown tests."
+      ],
+      "non_applicable": [
+        "Single-threaded work with no shared state or parallel execution."
+      ]
+    },
+    "async-patterns.md": {
+      "trigger": "An async boundary or event loop is changed.",
+      "questions": [
+        "Which calls can block?",
+        "How are timeout and cancellation propagated?"
+      ],
+      "safe_invariants": [
+        "Do not block an event loop.",
+        "Close resources on success, failure, and cancellation."
+      ],
+      "defaults": [
+        "Keep a coherent async model and bound external waits."
+      ],
+      "alternatives": [
+        "Use synchronous code when concurrency needs are small or dependencies are synchronous."
+      ],
+      "evidence": [
+        "Timeout, cancellation, cleanup, and concurrent-call tests."
+      ],
+      "non_applicable": [
+        "Pure synchronous code with no async callers or resources."
+      ]
+    },
+    "configuration.md": {
+      "trigger": "Runtime configuration, environment values, or secrets change.",
+      "questions": [
+        "Which values vary by environment?",
+        "What is required and what has a safe default?"
+      ],
+      "safe_invariants": [
+        "Never persist credentials in source or public artifacts.",
+        "Validate untrusted configuration."
+      ],
+      "defaults": [
+        "Use existing config layering and fail clearly for missing required values."
+      ],
+      "alternatives": [
+        "Use a named code constant for a true invariant."
+      ],
+      "evidence": [
+        "Precedence, invalid-input, missing-value, and redaction tests."
+      ],
+      "non_applicable": [
+        "A local detail that cannot vary by deployment."
+      ]
+    },
+    "observability.md": {
+      "trigger": "A runtime path needs operational diagnosis or service-level signals.",
+      "questions": [
+        "Which failures must operators distinguish?",
+        "Which identifiers safely correlate events?"
+      ],
+      "safe_invariants": [
+        "Do not log credentials or sensitive payloads.",
+        "Telemetry must not fail the primary operation."
+      ],
+      "defaults": [
+        "Reuse project logging and record structured outcomes and correlation fields."
+      ],
+      "alternatives": [
+        "Metrics or traces may answer the operational question better than logs."
+      ],
+      "evidence": [
+        "Captured failure signals and sensitive-field redaction evidence."
+      ],
+      "non_applicable": [
+        "Pure library logic already observable through its caller."
+      ]
+    },
+    "module-design.md": {
+      "trigger": "Responsibilities, boundaries, or public interfaces are added or moved.",
+      "questions": [
+        "Who owns this responsibility?",
+        "Can callers use a smaller stable interface?"
+      ],
+      "safe_invariants": [
+        "Avoid circular ownership and parallel sources of truth."
+      ],
+      "defaults": [
+        "Follow an existing boundary and extract cohesive, independently testable behavior."
+      ],
+      "alternatives": [
+        "Local duplication can be clearer than premature abstraction."
+      ],
+      "evidence": [
+        "Caller map, public-interface tests, and ownership rationale."
+      ],
+      "non_applicable": [
+        "A contained change inside an established boundary."
+      ]
+    },
+    "database.md": {
+      "trigger": "Persistent database reads, writes, schema, or transactions change.",
+      "questions": [
+        "What consistency and isolation are required?",
+        "What is the query and transaction cost?"
+      ],
+      "safe_invariants": [
+        "Parameterize untrusted values.",
+        "Release connections and preserve atomicity on failure."
+      ],
+      "defaults": [
+        "Reuse the project pool and keep transactions scoped to database work."
+      ],
+      "alternatives": [
+        "Choose optimistic locking, atomic updates, or serialization from contention evidence."
+      ],
+      "evidence": [
+        "Query-plan or index evidence plus rollback, conflict, and failure tests."
+      ],
+      "non_applicable": [
+        "No persistent database interaction or schema impact."
+      ]
+    },
+    "caching.md": {
+      "trigger": "A cache is introduced or its lifecycle changes.",
+      "questions": [
+        "What is the source of truth?",
+        "How are invalidation, bounds, and stale reads handled?"
+      ],
+      "safe_invariants": [
+        "A cache cannot be an undeclared source of truth.",
+        "Bound memory growth."
+      ],
+      "defaults": [
+        "Prefer cache-aside with explicit invalidation and measured usefulness."
+      ],
+      "alternatives": [
+        "Use immutable keys, explicit versions, or no cache when safer than TTL."
+      ],
+      "evidence": [
+        "Hit/miss, invalidation, expiry, stampede, and capacity evidence."
+      ],
+      "non_applicable": [
+        "No repeated expensive read or measured latency need."
+      ]
+    },
+    "api-integration.md": {
+      "trigger": "An external HTTP, RPC, webhook, or service contract changes.",
+      "questions": [
+        "What are timeout, retry, schema, and ownership boundaries?",
+        "Is the operation idempotent?"
+      ],
+      "safe_invariants": [
+        "Validate untrusted responses.",
+        "Do not retry non-idempotent actions without deduplication."
+      ],
+      "defaults": [
+        "Reuse the project client with bounded timeout and typed validation."
+      ],
+      "alternatives": [
+        "Fail fast, queue, cache, or degrade according to consistency needs."
+      ],
+      "evidence": [
+        "Contract, timeout, partial-response, retry, and duplicate-delivery tests."
+      ],
+      "non_applicable": [
+        "No call crosses a process or trust boundary."
+      ]
+    },
+    "event-driven.md": {
+      "trigger": "Events, queues, subscribers, or at-least-once delivery are introduced.",
+      "questions": [
+        "What are delivery and ordering guarantees?",
+        "How are duplicates handled?"
+      ],
+      "safe_invariants": [
+        "Make retried handlers safe and failed delivery observable."
+      ],
+      "defaults": [
+        "Use versioned schemas, stable event IDs, and bounded retry or dead-letter handling."
+      ],
+      "alternatives": [
+        "Use a synchronous call when the caller requires the result immediately."
+      ],
+      "evidence": [
+        "Duplicate, ordering, schema-version, and dead-letter tests."
+      ],
+      "non_applicable": [
+        "No asynchronous message boundary or downstream fan-out."
+      ]
+    },
+    "resilience.md": {
+      "trigger": "A remote dependency or overload-sensitive runtime path can fail.",
+      "questions": [
+        "Which failures are transient?",
+        "What is the resource and latency budget?"
+      ],
+      "safe_invariants": [
+        "Bound waits, retries, queues, and resources.",
+        "Do not hide permanent failure as success."
+      ],
+      "defaults": [
+        "Use explicit timeout and limited retry for recoverable operations."
+      ],
+      "alternatives": [
+        "Choose circuit breaking, bulkheads, backpressure, or immediate failure from evidence."
+      ],
+      "evidence": [
+        "Timeout, overload, dependency outage, and recovery tests."
+      ],
+      "non_applicable": [
+        "Pure in-process deterministic logic without resource contention."
+      ]
+    },
+    "memory-management.md": {
+      "trigger": "Data volume, lifetime, caching, streaming, or resource ownership changes.",
+      "questions": [
+        "What bounds allocation?",
+        "Who releases long-lived references?"
+      ],
+      "safe_invariants": [
+        "Bound collections fed by untrusted input.",
+        "Release owned resources on every path."
+      ],
+      "defaults": [
+        "Stream unknown-size inputs and use context-managed resources."
+      ],
+      "alternatives": [
+        "Materialize inputs when a verified small bound improves clarity."
+      ],
+      "evidence": [
+        "Peak-memory, large-input, cleanup, and repeated-operation evidence."
+      ],
+      "non_applicable": [
+        "Small fixed-size values with no retained resources."
+      ]
+    },
+    "code-review-first.md": {
+      "trigger": "The project contains nearby patterns or abstractions.",
+      "questions": [
+        "What is the closest maintained exemplar?",
+        "Why does redundant-looking code exist?"
+      ],
+      "safe_invariants": [
+        "Do not bypass security or ownership abstractions without evidence."
+      ],
+      "defaults": [
+        "Follow project conventions and inspect history when intent is unclear."
+      ],
+      "alternatives": [
+        "Introduce a new pattern when existing ones cannot meet a documented requirement."
+      ],
+      "evidence": [
+        "Exemplar, caller/history inspection, and capability-gap rationale."
+      ],
+      "non_applicable": [
+        "Greenfield code with no meaningful project precedent."
+      ]
+    },
+    "component-reuse.md": {
+      "trigger": "A capability may exist in the project, framework, or ecosystem.",
+      "questions": [
+        "Can an existing public interface meet the need?",
+        "What is the trust and maintenance cost?"
+      ],
+      "safe_invariants": [
+        "Do not implement cryptographic or authentication primitives ad hoc."
+      ],
+      "defaults": [
+        "Evaluate standard library, project abstraction, then framework capability."
+      ],
+      "alternatives": [
+        "Prefer small local code over a dependency when behavior is well bounded."
+      ],
+      "evidence": [
+        "Capability comparison, reuse decision, and compatibility tests."
+      ],
+      "non_applicable": [
+        "The requirement is novel and no comparable capability exists."
+      ]
+    },
+    "error-recovery.md": {
+      "trigger": "Partial failure, retry, resumability, or interrupted writes are possible.",
+      "questions": [
+        "Is failure transient?",
+        "Can retry duplicate or corrupt the operation?"
+      ],
+      "safe_invariants": [
+        "Bound retries and preserve failure context.",
+        "Do not silently discard partial failure."
+      ],
+      "defaults": [
+        "Fail fast for permanent errors; retry idempotent transient errors with bounded backoff."
+      ],
+      "alternatives": [
+        "Resume, compensate, quarantine, or manual recovery may fit better than retry."
+      ],
+      "evidence": [
+        "Interrupted-run, duplicate-attempt, terminal-error, and recovery tests."
+      ],
+      "non_applicable": [
+        "Atomic deterministic work with no recoverable intermediate state."
+      ]
+    },
+    "data-consistency.md": {
+      "trigger": "One logical change spans records, stores, services, or concurrent writers.",
+      "questions": [
+        "What consistency level is required?",
+        "What compensation or conflict policy applies?"
+      ],
+      "safe_invariants": [
+        "Do not claim unavailable atomicity.",
+        "Protect against lost updates."
+      ],
+      "defaults": [
+        "Use the smallest transaction boundary satisfying the invariant."
+      ],
+      "alternatives": [
+        "Saga, outbox, optimistic concurrency, or eventual consistency require explicit trade-offs."
+      ],
+      "evidence": [
+        "Conflict, duplicate, compensation, and partial-commit tests."
+      ],
+      "non_applicable": [
+        "A single atomic write with no concurrent or distributed boundary."
+      ]
+    },
+    "backwards-compatibility.md": {
+      "trigger": "A public API, CLI, config, schema, protocol, or layout changes.",
+      "questions": [
+        "Which old callers or data must work?",
+        "What are migration and rollback semantics?"
+      ],
+      "safe_invariants": [
+        "Do not execute irreversible high-risk migration without exact authorization."
+      ],
+      "defaults": [
+        "Add before remove, preserve declared aliases, and make migration idempotent."
+      ],
+      "alternatives": [
+        "Use a versioned break or explicit rejection when compatibility is impossible."
+      ],
+      "evidence": [
+        "Legacy fixture, repeated upgrade, interrupted migration, and rollback evidence."
+      ],
+      "non_applicable": [
+        "Private implementation with no persisted or externally consumed shape."
+      ]
+    },
+    "performance-antipatterns.md": {
+      "trigger": "A hot path, large collection, query fan-out, or latency target changes.",
+      "questions": [
+        "What measured budget is at risk?",
+        "Does work scale with input or caller count?"
+      ],
+      "safe_invariants": [
+        "Bound untrusted work and avoid unbounded query or allocation growth."
+      ],
+      "defaults": [
+        "Measure first; batch, paginate, or index the proven bottleneck."
+      ],
+      "alternatives": [
+        "Prefer clear simple code when evidence shows no material risk."
+      ],
+      "evidence": [
+        "Representative benchmark, query count, complexity, or profile evidence."
+      ],
+      "non_applicable": [
+        "Cold or fixed-size path with no performance requirement."
+      ]
+    },
+    "graceful-shutdown.md": {
+      "trigger": "A service, worker, pool, or background task owns resources.",
+      "questions": [
+        "How are new and in-flight work sequenced?",
+        "What is the shutdown deadline?"
+      ],
+      "safe_invariants": [
+        "Do not abandon durable state or leave owned resources running."
+      ],
+      "defaults": [
+        "Stop intake, drain within a bound, close dependencies, and expose timeout failure."
+      ],
+      "alternatives": [
+        "Immediate termination can fit stateless disposable work."
+      ],
+      "evidence": [
+        "Signal, drain, timeout, forced-stop, and cleanup tests."
+      ],
+      "non_applicable": [
+        "Short-lived commands without background work or persistent resources."
+      ]
+    },
+    "testing-strategy.md": {
+      "trigger": "Behavior, regression coverage, or trust boundaries materially change.",
+      "questions": [
+        "Would the test fail if implementation were removed?",
+        "Which boundary and failure paths matter?"
+      ],
+      "safe_invariants": [
+        "Tests cannot expose credentials or mutate uncontrolled external systems."
+      ],
+      "defaults": [
+        "Assert observable behavior and reproduce the defect before relying on mocks."
+      ],
+      "alternatives": [
+        "Select unit, integration, contract, property, mutation, or E2E depth from risk."
+      ],
+      "evidence": [
+        "Behavior assertion, defect reproduction, boundary cases, and negative control."
+      ],
+      "non_applicable": [
+        "Generated or documentation-only change with deterministic structural validation."
+      ]
+    },
+    "operational-readiness.md": {
+      "trigger": "A service, scheduled task, worker, or rollout behavior changes.",
+      "questions": [
+        "How will operators detect failure?",
+        "What rollout, capacity, and rollback signals exist?"
+      ],
+      "safe_invariants": [
+        "Do not expose sensitive diagnostics or report false readiness."
+      ],
+      "defaults": [
+        "Define health signals, failure visibility, capacity bounds, and rollback criteria."
+      ],
+      "alternatives": [
+        "Use a flag, canary, shadow run, or manual rollback according to deployment risk."
+      ],
+      "evidence": [
+        "Isolated deploy, startup/shutdown, degraded dependency, and rollback evidence."
+      ],
+      "non_applicable": [
+        "Non-running library, docs, or build-time-only code."
+      ]
+    },
+    "dependency-supply-chain.md": {
+      "trigger": "A dependency, package source, lockfile, or installer changes.",
+      "questions": [
+        "Is it necessary?",
+        "What source, license, scripts, binaries, and permissions are introduced?"
+      ],
+      "safe_invariants": [
+        "Do not execute untrusted scripts or expand privileges without review."
+      ],
+      "defaults": [
+        "Pin reproducibly, retain integrity metadata, and prefer maintained minimal dependencies."
+      ],
+      "alternatives": [
+        "Use the standard library, an existing dependency, vendoring, or bounded local code."
+      ],
+      "evidence": [
+        "Dependency diff, provenance, license, advisory, script, and clean-install evidence."
+      ],
+      "non_applicable": [
+        "No dependency graph, source, binary, installer, or permission change."
+      ]
+    },
+    "ui-state-accessibility.md": {
+      "trigger": "Interactive UI structure, state, or navigation changes.",
+      "questions": [
+        "What are loading, empty, error, disabled, and optimistic states?",
+        "Can keyboard and assistive users complete the task?"
+      ],
+      "safe_invariants": [
+        "Preserve keyboard access, visible focus, semantic labels, and error recovery."
+      ],
+      "defaults": [
+        "Use semantic controls, managed focus, labelled states, responsive overflow, and rollback."
+      ],
+      "alternatives": [
+        "Use platform-native interactions instead of custom behavior when suitable."
+      ],
+      "evidence": [
+        "Keyboard, focus, label, contrast, state, and responsive tests."
+      ],
+      "non_applicable": [
+        "No user interface, rendered state, or interaction behavior changes."
+      ]
+    },
+    "write-safety.md": {
+      "trigger": "Writing to a file that already exists and may contain content the writer did not generate (configs, user tool files, managed sections).",
+      "questions": [
+        "Who owns each section of this file — the writer, the user, or another tool?",
+        "Litmus test: does this file contain content I did not generate?"
+      ],
+      "safe_invariants": [
+        "MUST NOT fully replace a file with mixed ownership — full replacement silently destroys content the writer did not generate.",
+        "One authoritative location per truth; every duplicate drifts (no dual-write)"
+      ],
+      "defaults": [
+        "Generator owns 100% of the file → full replace is safe; mixed ownership → incremental merge (Edit/patch/append, or only the writer-owned section); unsure → merge"
+      ],
+      "alternatives": [
+        "Write a candidate (.new) and let the human accept — the deployer's ownership-manifest pattern"
+      ],
+      "evidence": [
+        "A merge-or-replace decision recorded for each pre-existing file written, and zero full replaces on mixed-ownership files"
+      ],
+      "non_applicable": [
+        "Files created fresh by this change — no prior content to destroy."
+      ]
+    }
+  },
+  "sprint_capsules": {
+    "strategy": "managed_phase_references",
+    "sequence": [
+      "phase-plan",
+      "phase-act",
+      "phase-check",
+      "phase-done"
+    ],
+    "single_active_phase": true
+  },
+  "files": {
+    "skills/pactkit-analyze/SKILL.md": "61e170f41ac108606adc180e15007eaae84db5369a12e49b4ba0bed119b7e059",
+    "skills/pactkit-audit/SKILL.md": "ac4f5b63d2c7141488723263208b42da3f20ae12b7f87fa9b8e8c5a10383f752",
+    "skills/pactkit-board/SKILL.md": "863aee5c239ee396bb01c80fd2b9af15d5b5beb21b7daec8059aa61717f698f2",
+    "skills/pactkit-board/scripts/board.py": "5dbf1a8ad558bca1a30133e8fb3eb2ab5fa8ba1052273665764c33db927192ed",
+    "skills/pactkit-doctor/SKILL.md": "5be9027abf37dae6b010fe42948fd76df0baaf4bf2ec31a32ad48a64002bfc40",
+    "skills/pactkit-draw/SKILL.md": "15a002b00f509ea6f810f549ade96bfe112afc95109e5768b273253678f92e24",
+    "skills/pactkit-garden/SKILL.md": "060cf648c6147a9455cfab34cba35c8c313d81fe891052b77c957acc81119ab9",
+    "skills/pactkit-release/SKILL.md": "baf1e1b68b6bf3f58e6dc9493ad3e4e57817bec024f8b1dc7de6989e4cbf391e",
+    "skills/pactkit-report/SKILL.md": "390ffe609c4ce01ccfd4f94cc276ecba2c59d8ece6aca6d15c0ab259806e62ce",
+    "skills/pactkit-report/scripts/report.py": "5631d61790fb529730df0d2a755d100f5db3ffd5a446c2826874d782111edc9c",
+    "skills/pactkit-review/SKILL.md": "a007f182e67828e2eac11f76a87e400ba722bf35a750e629b0876b23d17c2dd3",
+    "skills/pactkit-scaffold/SKILL.md": "cb8e35bebd9525c0fd6e79a4cbfe6b35397ad865c7c78582b1d206a4f684f60b",
+    "skills/pactkit-scaffold/scripts/scaffold.py": "ca34ea4a7a88949a18a3da3651b825ced01287a9b98ce5b8863dd003cd154c13",
+    "skills/pactkit-status/SKILL.md": "784eccbf9f04d314440151122feefed4648aca081e320189fc6a5a033496d861",
+    "skills/pactkit-trace/SKILL.md": "e48f67cade85c08cbe4a8128a40e0f762c94f668efbfc50c4cd0c9e267251f85",
+    "skills/pactkit-visualize/SKILL.md": "72b234ca3e6a0ca690ad5fb62e51d1e42ffeee0074f3a8af53d306eab5234e3d",
+    "skills/pactkit-visualize/scripts/visualize.py": "89f9add4ea7cfb0bcf9afe187228a6783d1446251ac1d288374fa6d6274e11bc",
+    "prompts/project-act.prompt.md": "77e6807c6b3717851c9ad103e3a04ff0e4f502c1c0fe400c560c35e5ca07a5b7",
+    "prompts/project-check.prompt.md": "afb451a6f4603dae62b3a7e0402163f8d9dacf919a8ca4c5ea847668d9d6d023",
+    "prompts/project-clarify.prompt.md": "d76915550014d45f9fc50d516f1e1b17810875ba2b0527571c63ff6eadba30ec",
+    "prompts/project-debug.prompt.md": "2261a2e11324f5a5d87b985a0eab3c085094ed4f5994793e710072bac7998380",
+    "prompts/project-design.prompt.md": "85b9c071beda3dca79fcccbb753d1f99fa35156882d7b8e9c613d1832eda89ab",
+    "prompts/project-done.prompt.md": "a1abafffe1455b84af71febffe95fabde2e7399d13163b3c4ea6871a27edbd4a",
+    "prompts/project-hotfix.prompt.md": "16f4362d0ee6254c51089e20bf751d07402763cbad7f46c2896f3be7d0739407",
+    "prompts/project-init.prompt.md": "eb0c96e01826f63ef0f2ff35981b786f61f456f73628f2dcbc45a30919012763",
+    "prompts/project-plan.prompt.md": "ea40364c50f7f0ff1bd58d17d80b748b4241ac79df2e0f34d920fad94df8f8a7",
+    "prompts/project-pr.prompt.md": "97543b0c15cc57a86e87e3ba3f82828499153a4b653fca4fa362691e66e0bd01",
+    "prompts/project-release.prompt.md": "e1fdea595eb9f650f5b99a3aa715de27f42d85f73648bf9e4d41effffb1183e6",
+    "prompts/project-sprint.prompt.md": "3d0b8bb11b71d1d20259e593e2a730cf867aff1572810485a56b439dfb65dd1e",
+    "agents/code-explorer.md": "470c09d6dc253467d9f74071da2b5f2dbb16cb697b586122c8d967a38ee112c0",
+    "agents/product-designer.md": "a69541c8a133eaf3d53df1861433304b755a6ea8a6e6e1c695acf62d2b83f22e",
+    "agents/qa-engineer.md": "bbefe7981ee1e665aa10b887310ccf7c279e6e2c5d32054e02e5e7b5aae6564a",
+    "agents/repo-maintainer.md": "767a7158474ee0014745e6b8ed366104ec227965f2eae7e31aec22e78fa036a0",
+    "agents/security-auditor.md": "159d0afa3307c58f21d850ad3a432d02056b6fe86ecf4c98ae13eb430f8e35eb",
+    "agents/senior-developer.md": "fa3723528d679ce745055dd620cfed5609e8a18143094821ace254e979d731f7",
+    "agents/system-architect.md": "5d82a33757b1caf22757d2ef2a8efec55a4743704f7378984cf83d92cfb0d9b8",
+    "agents/system-medic.md": "5771158127a9163b381da5f24b58f6b8ba6a291bda6213919276aaf9813aa636",
+    "agents/visual-architect.md": "374dc8ddf8d55af9e997ccbc282ed3dda0ba39704355875442040f6bced539c5"
+  }
+}

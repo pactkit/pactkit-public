@@ -12,7 +12,7 @@
 
 > **PactKit** (Pact 契约 + Kit) is a lightweight dev-enablement scaffold: it gives AI coding assistants the standards, specs and methods of a disciplined engineering workflow, without getting in the way. Ordinary questions and ordinary coding never activate the workflow — you opt in per task. There is no admin plane, no central control, and nothing that cannot be uninstalled.
 >
-> Deterministic operations run as code, not prompts (CODE is the Law). Decisions are grounded in data, not memory (Data is the Truth). 56 CLI subcommands, 9 specialized agents, 12 commands, 25 skills, and a Plan-Act-Check-Done lifecycle you invoke when you want it. One `pip install` deploys to all 4 supported IDEs (adapters are opt-in extras).
+> Deterministic operations run as code, not prompts (CODE is the Law). Decisions are grounded in data, not memory (Data is the Truth). 57 CLI subcommands, 9 specialized agents, 12 commands, 25 skills, and a Plan-Act-Check-Done lifecycle you invoke when you want it. One `pip install` deploys to all 4 supported IDEs (adapters are opt-in extras).
 
 ### Supported AI Tools
 
@@ -269,7 +269,7 @@ skills, so `/project-plan` and `pactkit-visualize` deploy the same way) plus the
 
 ## CLI Subcommands
 
-PactKit ships 56 deterministic CLI subcommands — operations that were previously delegated to AI prompts are now enforced in Python code (the "C" in P.A.C.T.):
+PactKit ships 57 deterministic CLI subcommands — operations that were previously delegated to AI prompts are now enforced in Python code (the "C" in P.A.C.T.):
 
 | Command | Purpose |
 |---------|---------|
@@ -299,7 +299,8 @@ PactKit ships 56 deterministic CLI subcommands — operations that were previous
 | `pactkit lesson-append` | Append lesson with specificity check and dedup |
 | `pactkit invariants-refresh` | Update test count invariant in rules.md |
 | `pactkit sec-scope` | Detect security scope for changed files |
-| `pactkit backfill-release` | Replace Release: TBD in completed specs |
+| `pactkit backfill-release` | Replace Release: TBD/Unreleased in completed specs |
+| `pactkit evidence-measure` | Measure scope integrity (R8) and negative control (R9) — the explicit half of the ADR-0006 evidence touchpoint |
 | `pactkit issue-sync` | GitHub issue lifecycle for BUG/HOTFIX items |
 | `pactkit lint-context` | Validate context.md structure |
 | `pactkit lint-lessons` | Validate lessons.md structure |

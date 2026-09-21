@@ -1,0 +1,118 @@
+{
+  "version": 1,
+  "components": {
+    "skills": {
+      "pactkit-analyze": {
+        "skills/pactkit-analyze/SKILL.md": "61e170f41ac108606adc180e15007eaae84db5369a12e49b4ba0bed119b7e059"
+      },
+      "pactkit-audit": {
+        "skills/pactkit-audit/SKILL.md": "ac4f5b63d2c7141488723263208b42da3f20ae12b7f87fa9b8e8c5a10383f752"
+      },
+      "pactkit-board": {
+        "skills/pactkit-board/SKILL.md": "863aee5c239ee396bb01c80fd2b9af15d5b5beb21b7daec8059aa61717f698f2",
+        "skills/pactkit-board/scripts/board.py": "5dbf1a8ad558bca1a30133e8fb3eb2ab5fa8ba1052273665764c33db927192ed"
+      },
+      "pactkit-doctor": {
+        "skills/pactkit-doctor/SKILL.md": "5be9027abf37dae6b010fe42948fd76df0baaf4bf2ec31a32ad48a64002bfc40"
+      },
+      "pactkit-draw": {
+        "skills/pactkit-draw/SKILL.md": "15a002b00f509ea6f810f549ade96bfe112afc95109e5768b273253678f92e24"
+      },
+      "pactkit-garden": {
+        "skills/pactkit-garden/SKILL.md": "060cf648c6147a9455cfab34cba35c8c313d81fe891052b77c957acc81119ab9"
+      },
+      "pactkit-release": {
+        "skills/pactkit-release/SKILL.md": "baf1e1b68b6bf3f58e6dc9493ad3e4e57817bec024f8b1dc7de6989e4cbf391e"
+      },
+      "pactkit-report": {
+        "skills/pactkit-report/SKILL.md": "390ffe609c4ce01ccfd4f94cc276ecba2c59d8ece6aca6d15c0ab259806e62ce",
+        "skills/pactkit-report/scripts/report.py": "5631d61790fb529730df0d2a755d100f5db3ffd5a446c2826874d782111edc9c"
+      },
+      "pactkit-review": {
+        "skills/pactkit-review/SKILL.md": "a007f182e67828e2eac11f76a87e400ba722bf35a750e629b0876b23d17c2dd3"
+      },
+      "pactkit-scaffold": {
+        "skills/pactkit-scaffold/SKILL.md": "cb8e35bebd9525c0fd6e79a4cbfe6b35397ad865c7c78582b1d206a4f684f60b",
+        "skills/pactkit-scaffold/scripts/scaffold.py": "ca34ea4a7a88949a18a3da3651b825ced01287a9b98ce5b8863dd003cd154c13",
+        "skills/pactkit-scaffold/scripts/spec_linter.py": "c2798f7eccf8855d1bd019264890d2a3ce7db43ccb5431dbc74574cc142fe041"
+      },
+      "pactkit-status": {
+        "skills/pactkit-status/SKILL.md": "784eccbf9f04d314440151122feefed4648aca081e320189fc6a5a033496d861"
+      },
+      "pactkit-trace": {
+        "skills/pactkit-trace/SKILL.md": "e48f67cade85c08cbe4a8128a40e0f762c94f668efbfc50c4cd0c9e267251f85"
+      },
+      "pactkit-visualize": {
+        "skills/pactkit-visualize/SKILL.md": "72b234ca3e6a0ca690ad5fb62e51d1e42ffeee0074f3a8af53d306eab5234e3d",
+        "skills/pactkit-visualize/scripts/visualize.py": "89f9add4ea7cfb0bcf9afe187228a6783d1446251ac1d288374fa6d6274e11bc"
+      }
+    },
+    "commands": {
+      "project-act": {
+        "prompts/project-act.prompt.md": "77e6807c6b3717851c9ad103e3a04ff0e4f502c1c0fe400c560c35e5ca07a5b7"
+      },
+      "project-check": {
+        "prompts/project-check.prompt.md": "afb451a6f4603dae62b3a7e0402163f8d9dacf919a8ca4c5ea847668d9d6d023"
+      },
+      "project-clarify": {
+        "prompts/project-clarify.prompt.md": "d76915550014d45f9fc50d516f1e1b17810875ba2b0527571c63ff6eadba30ec"
+      },
+      "project-debug": {
+        "prompts/project-debug.prompt.md": "2261a2e11324f5a5d87b985a0eab3c085094ed4f5994793e710072bac7998380"
+      },
+      "project-design": {
+        "prompts/project-design.prompt.md": "85b9c071beda3dca79fcccbb753d1f99fa35156882d7b8e9c613d1832eda89ab"
+      },
+      "project-done": {
+        "prompts/project-done.prompt.md": "a1abafffe1455b84af71febffe95fabde2e7399d13163b3c4ea6871a27edbd4a"
+      },
+      "project-hotfix": {
+        "prompts/project-hotfix.prompt.md": "16f4362d0ee6254c51089e20bf751d07402763cbad7f46c2896f3be7d0739407"
+      },
+      "project-init": {
+        "prompts/project-init.prompt.md": "eb0c96e01826f63ef0f2ff35981b786f61f456f73628f2dcbc45a30919012763"
+      },
+      "project-plan": {
+        "prompts/project-plan.prompt.md": "ea40364c50f7f0ff1bd58d17d80b748b4241ac79df2e0f34d920fad94df8f8a7"
+      },
+      "project-pr": {
+        "prompts/project-pr.prompt.md": "97543b0c15cc57a86e87e3ba3f82828499153a4b653fca4fa362691e66e0bd01"
+      },
+      "project-release": {
+        "prompts/project-release.prompt.md": "e1fdea595eb9f650f5b99a3aa715de27f42d85f73648bf9e4d41effffb1183e6"
+      },
+      "project-sprint": {
+        "prompts/project-sprint.prompt.md": "3d0b8bb11b71d1d20259e593e2a730cf867aff1572810485a56b439dfb65dd1e"
+      }
+    },
+    "agents": {
+      "code-explorer": {
+        "agents/code-explorer.md": "470c09d6dc253467d9f74071da2b5f2dbb16cb697b586122c8d967a38ee112c0"
+      },
+      "product-designer": {
+        "agents/product-designer.md": "a69541c8a133eaf3d53df1861433304b755a6ea8a6e6e1c695acf62d2b83f22e"
+      },
+      "qa-engineer": {
+        "agents/qa-engineer.md": "bbefe7981ee1e665aa10b887310ccf7c279e6e2c5d32054e02e5e7b5aae6564a"
+      },
+      "repo-maintainer": {
+        "agents/repo-maintainer.md": "767a7158474ee0014745e6b8ed366104ec227965f2eae7e31aec22e78fa036a0"
+      },
+      "security-auditor": {
+        "agents/security-auditor.md": "159d0afa3307c58f21d850ad3a432d02056b6fe86ecf4c98ae13eb430f8e35eb"
+      },
+      "senior-developer": {
+        "agents/senior-developer.md": "fa3723528d679ce745055dd620cfed5609e8a18143094821ace254e979d731f7"
+      },
+      "system-architect": {
+        "agents/system-architect.md": "5d82a33757b1caf22757d2ef2a8efec55a4743704f7378984cf83d92cfb0d9b8"
+      },
+      "system-medic": {
+        "agents/system-medic.md": "5771158127a9163b381da5f24b58f6b8ba6a291bda6213919276aaf9813aa636"
+      },
+      "visual-architect": {
+        "agents/visual-architect.md": "374dc8ddf8d55af9e997ccbc282ed3dda0ba39704355875442040f6bced539c5"
+      }
+    }
+  }
+}
