@@ -1,5 +1,57 @@
 # Changelog
 
+## [3.0.4] - 2026-09-24
+
+**为 adapter 解锁的 core 依赖发布。** 本版把宿主描述数据从 core 的硬编码表
+迁进可注册的 `AdapterRegistration`，并落地三个 adapter 自带声明所需的
+类型与 API。
+
+**这不是 PactKit 4.0 的最终发布**——4.0 的 lifecycle closure 还在后面。
+本版的定位是让 adapter 能站起来，不是宣布内核化完成。
+
+### 升级编排（MUST 读）
+
+**新 adapter + 旧 core 是不兼容组合，不是运行时回归。**
+
+三个 adapter 钉 `pactkit>=3.0.1,<3.1.0`，所以升级到新 adapter 时 pip 会
+同时把 core 升到本版；**只升 core 不升 adapter 是安全的**。反过来，手工把
+新 adapter 装到 core 3.0.3 上会得到
+`ModuleNotFoundError: No module named 'pactkit.capability'`，注册表退化成
+只剩 classic——这是安装组合的问题，不是缺陷，重装 core 即可恢复。
+
+### Added
+
+- **`pactkit.capability`** —— 四级能力解析与多维保证模型（SPEC-4.0-04）。
+- **`AdapterRegistration` 与声明类型** —— `InputTranslation`、`DeploymentClaim`、
+  `SecurityDeclaration`、`SecurityFacts`。宿主描述（能力、pre-tool 面、部署
+  声明、安全事实）现在由 adapter 自带，`complete_registration` 负责采集
+  （SPEC-4.0-22 Phase B / Step 6）。
+- **Adapter SPI 公开面冻结** + 宿主分派棘轮（SPEC-4.0-03）。
+
+### Changed
+
+- **未登记的宿主不再伪造一整套 Degraded 能力。** unknown host 如实报
+  `unknown_host`，而不是给出一张看起来像测量结果的能力表。
+- **需要 tamper_guard 授权的写操作，在安全事实声明不完整时不再放行。**
+  三态模型区分 `missing`（宿主没说话 → 我们不知道）与 `empty`（宿主说了它
+  没有 → 这是一次测量）。`missing` 归为授权未决，fail closed 并点名不完整
+  的类别；补齐声明后回到正常的细粒度裁决（普通编辑放行、绕过仍拦）。
+- **doctor 的宿主枚举只来自 registry**，路径从 profile 派生。
+- **路径值改派生** —— 禁写路径模式由 7 条增至 12 条，覆盖全部已登记宿主的
+  config 目录。
+
+### Fixed
+
+- `--overlay` 只接受 complexity schema，不支持的输入显式失败。
+- `blast_radius` 的 resolver 只认 exact path；shorthand 需显式开启，歧义不
+  任选。四种空结果拆开：`resolved` / `not_found` / `out_of_scope` /
+  `truncated`。
+- analyzer 能表达「读不了」——四份复制的契约收敛为一份。
+- `query` 的空结果不再被当成 absence 的证明。
+- `done-verify` 不再把 blockquote 里的路径当成磁盘路径。
+- `report` / `visualize` 的扫描器按 ownership metadata 排除 PactKit 部署产物。
+- Story 生命周期成为契约——状态机由数据定义，归档不再冒充完成。
+
 ## [3.0.3] - 2026-09-21
 
 **证据链路的三个边界修复。** 3.0.2 引入的「测量与记录」链路有三处会给出
