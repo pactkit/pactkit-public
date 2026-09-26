@@ -4,16 +4,23 @@
 
 | Version | Supported          |
 |---------|--------------------|
-| 1.4.x   | :white_check_mark: |
-| < 1.4   | :x:                |
+| 4.0.x   | :white_check_mark: |
+| 3.1.x   | :white_check_mark: |
+| 3.0.x   | :white_check_mark: |
+| < 3.0   | :x:                |
 
-We only provide security fixes for the latest minor release. Users on older versions should upgrade.
+We provide security fixes for the current and previous minor release. Users on
+older versions should upgrade — the version is reported by `pactkit version`,
+and `pactkit doctor` flags a deployment that lags the installed CLI.
+
+> This table is refreshed on every minor release; a guard test fails whenever
+> the version in `pyproject.toml` is missing from it.
 
 ## Reporting a Vulnerability
 
 **Please do NOT report security vulnerabilities through public GitHub issues.**
 
-Instead, use [GitHub Security Advisories](https://github.com/pactkit/pactkit/security/advisories/new) to report vulnerabilities privately. This ensures the issue is handled confidentially until a fix is available.
+Instead, use [GitHub Security Advisories](https://github.com/pactkit/pactkit-public/security/advisories/new) to report vulnerabilities privately. This ensures the issue is handled confidentially until a fix is available.
 
 When reporting, please include:
 

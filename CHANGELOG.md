@@ -1,5 +1,127 @@
 # Changelog
 
+## [4.0.0] - 2026-09-26
+
+**Kernelization + Repository Coherence。** 自 3.1.0 起的契约边界变更，全部由
+**行为变更**驱动——v4 的裁定是 major 由行为变更决定，不由包拓扑决定。即使不拆包，
+4.0 仍改变 spec lifecycle / story 状态机 / evidence contract / prompt 生成模型 /
+truth hierarchy / 迁移行为 / artifact 元数据 / garden 语义。
+
+### 升级编排（MUST 读）
+
+**四包共享 major.minor，lockstep 发布。** 两条独立的锁表达同一件事：adapter 钉
+`pactkit>=4.0.0,<4.1.0`，且 `doctor.check_adapter_compat` 要求
+`_major_minor(adapter) == _major_minor(core)`。
+
+**core 4.0.0 与 3.x 的 adapter 是明确不允许的组合**——部署会被 skew guard 拒绝：
+
+    ✗ Adapter pactkit-codex 3.1.0 incompatible with core 4.0.0 (major/minor mismatch)
+
+这是刻意选择的更轻失败模式：import 正常、注册正常，只有**部署**被明确拦下，可用
+`--allow-adapter-skew` 显式放行。**请把四包一起升到 4.0.0**：
+
+    pip install -U "pactkit==4.0.0" "pactkit-opencode==4.0.0" \
+                  "pactkit-codex==4.0.0" "pactkit-copilot==4.0.0"
+
+### Removed
+
+- **core 不再为任何外部宿主声明任何东西**（SPEC-4.0-22 Step 7）。profile、能力、
+  pre-tool 面、部署声明、安全事实、线格式，全部由各自 adapter 自带并经
+  entry-point discovery 注册。core 只保留它随包发布的 `classic`。
+- **`resolve_pactkit_yaml_dir` 的目录存在性回退**（Step 8）。写入路径不再由
+  「哪个目录碰巧存在」决定——实测 `mkdir .opencode && pactkit init --format classic`
+  会把 **classic 的**配置写进 `.opencode/pactkit.yaml`。规则改为：**读取可以发现
+  已有层；写入必须知道自己正在为哪个 format 写。**
+- adapter 的**内联 `pactkit.yaml` 模板**（Step 8 R-②-1）。它们写出的
+  `stack: unknown` 不在 core 的 `VALID_STACKS` 里，且没有 `schema_version`——
+  adapter 在写 core 校验器会拒绝的值，而没有人读回来看。
+
+### Changed
+
+- **所有宿主的 `pactkit.yaml` 由同一个 canonical format-aware generator 产生。**
+  adapter 只声明**位置**（`profile.pactkit_yaml_path`）与**是否需要**，不再发明格式。
+- **opencode 现在真的生成 `.opencode/pactkit.yaml`。** 此前它被声明、被搜索、
+  从不被生产者创建，却能被别的宿主创建——「声明 + 搜索 + 不生产」会让后续判断把
+  一个不存在的状态当成正常候选。
+- `register_adapter` 的重注册保留 `input_translation`。它是第五个声明成员，此前
+  漏了 carry-forward：重注册会**静默撤回**线格式声明，`translate_host_payload`
+  随即认不出该宿主，整条通道 fail-open。
+
+### Notes
+
+- 四宿主在 **fresh init** 下生成的配置逐字节相同。**已存在任意 `pactkit.yaml` 的
+  项目不自动增殖宿主副本**——它继续复用现有层（已知行为，非缺陷）。
+- 本段 CHANGELOG 在 `v4.0.0` tag 之后补写，因此**不包含在 tag 指向的那棵树里**。
+
+## [3.1.0] - 2026-09-25
+
+**外部宿主的归属从 core 移到 adapter。** SPEC-4.0-22 Step 7：core 不再为
+opencode / codex / copilot 声明任何东西——profile、能力、pre-tool 面、部署
+声明、安全事实、线格式，全部由各自 adapter 自带并经 entry-point discovery
+注册。core 只保留它自己随包发布的 `classic`。
+
+**这是契约边界变更，不是内部重构**，所以是 minor 而不是 patch：宿主从
+「core 预置」变成「adapter 装上才出现」，过渡期的 API 与状态整体删除。
+
+**这不是 PactKit 4.0 的最终发布**——4.0 的 lifecycle closure 还在后面。
+
+### 升级编排（MUST 读）
+
+**adapter 与 core 必须共享 major.minor，四包在稳定态 lockstep 发布。**
+
+两条独立的锁表达同一件事：
+
+- 每个 adapter 钉 `pactkit>=X,<Y`；
+- `doctor.check_adapter_compat` 要求
+  `_major_minor(adapter) == _major_minor(core)`。
+
+所以**必须先升 adapter 到 3.1.0，再升 core 到 3.1.0**。反过来（core 先升）
+的实测后果是 pip 把 core **静默降级**回 3.0.4：
+
+    Attempting uninstall: pactkit
+      Uninstalling pactkit-3.1.0
+    Successfully installed pactkit-3.0.4
+
+而旧的 adapter 3.0.x 装到 core 3.1.0 上会在 import 期就失败——它们仍在类体里
+读 core 的 profile 表，而那张表已经不存在了。
+
+**兼容前提：adapter >= 3.1.0。** 过渡窗口里（adapter 3.1.0 + core 3.0.4）
+import 正常、注册正常，部署由 skew guard 明确拒绝，可用
+`--allow-adapter-skew` 显式放行——这是刻意选择的更轻的失败模式。
+
+### Removed
+
+- **core 侧的外部宿主声明** —— `FORMAT_PROFILES` 的三条外部宿主条目，
+  以及 `_CORE_CAPABILITIES` / `_CORE_PRETOOL_SURFACES` /
+  `_CORE_DEPLOYMENT_CLAIMS` / `_CORE_SECURITY` 的外部宿主行。四张表收窄为
+  `_BUILTIN_*`，只承载 core 自带宿主。
+- **`SOURCE_CORE_TRANSITIONAL`** 与 **`transitional_hosts()`** —— 过渡集合
+  已空，读数与来源标签一并删除。宿主现在只有一条到达路径：adapter 注册。
+- **`host_payloads.OPENCODE_INPUT`** 及其 import 时注册。它让 core 持有宿主
+  专属线格式；删除 seed 后，这一行在**没跑过 discovery 的进程里**抛
+  `UnknownAdapterError`，而门禁按 R3 自锁保护**放行**——即静默 fail-open。
+  线格式现在属于 `pactkit_opencode.declarations.INPUT_TRANSLATION`。
+
+### Changed
+
+- **`_seed_from_core` → `_seed_builtin`，且拒绝非 `core_bundled` 行。**
+  `FORMAT_PROFILES` 里出现一个没有 `core_bundled` 标记的宿主会在 import 期
+  报错，而不是悄悄成为第二处宿主声明。
+- **CLI 在构建 `argparse` 的 `choices` 之前先触发 discovery。**
+  `VALID_FORMATS` 是活视图，但 `choices` 只快照一次；没有这一步，
+  `pactkit init --format codex` 会被拒（实测）。
+- **配置发现顺序改为显式策略。** `_LiveYamlCandidates._CORE_ORDER` →
+  `_PREFERRED_ORDER`，并写明它是 core 对「宿主无法被识别时读哪份配置」的
+  优先级策略，不是对宿主的声明——所以它随 Step 7 保留，而宿主数据全部离开。
+- **`host_dispatch_ratchet` 改为 site-driven。** 旧判据问「这个字符串是不是
+  宿主名」，宿主名集来自 `FORMAT_PROFILES`；Step 7 把那张表收窄后，集合悄悄
+  塌成 `{classic}`，计数从 5 假降到 2——**代码一行没改**。新判据问「这个比较
+  的主语是不是 host identity」，不需要任何宿主名单。detector 只发现，
+  classification 层负责裁定；未裁定的点 fail-closed 计入主指标。
+  分类由两档增至三档：`host-dispatch` / `domain-value` /
+  `not-host-knowledge`。**主指标仍为 5，domain-value 仍为 2**——Step 7 没有
+  减少任何真实分派点。
+
 ## [3.0.4] - 2026-09-24
 
 **为 adapter 解锁的 core 依赖发布。** 本版把宿主描述数据从 core 的硬编码表
