@@ -12,23 +12,32 @@
 
 > **PactKit** (Pact 契约 + Kit) is a lightweight dev-enablement scaffold: it gives AI coding assistants the standards, specs and methods of a disciplined engineering workflow, without getting in the way. Ordinary questions and ordinary coding never activate the workflow — you opt in per task. There is no admin plane, no central control, and nothing that cannot be uninstalled.
 >
-> Deterministic operations run as code, not prompts (CODE is the Law). Decisions are grounded in data, not memory (Data is the Truth). 67 CLI subcommands, 9 specialized agents, 12 commands, 25 skills, and a Plan-Act-Check-Done lifecycle you invoke when you want it. One `pip install` deploys to all 4 supported IDEs (adapters are opt-in extras).
+> Deterministic operations run as code, not prompts (CODE is the Law). Decisions are grounded in data, not memory (Data is the Truth). 67 CLI subcommands, 9 specialized agents, 12 commands, 25 skills, and a Plan-Act-Check-Done lifecycle you invoke when you want it. One `pip install` deploys to Claude Code, Codex and OpenCode (adapters are opt-in extras).
 
 ### Supported AI Tools
+
+Supports **Claude Code**, **Codex** and **OpenCode**.
 
 | Tool | Format | Command |
 |------|--------|---------|
 | **Claude Code** | Classic | `pactkit init` |
-| **OpenCode** | OpenCode | `pactkit init` |
 | **Codex CLI** | Codex | `pactkit init` |
-| **GitHub Copilot** | Copilot | `pactkit init --format copilot` |
+| **OpenCode** | OpenCode | `pactkit init` |
 
-> `pactkit init` deploys all 4 IDE formats at once. Use `--format <name>` to target a single IDE.
+> `pactkit init` deploys all three formats at once. Use `--format <name>` to target a single one.
+
+**GitHub Copilot is out of the supported scope.** `pactkit-copilot` was published
+through 4.1.0 and that release still installs and works
+(`pip install pactkit-copilot`); it receives no further updates. It was never
+part of the default install — `pip install "pactkit[all]"` does not pull it, and
+there is no `pactkit[copilot]` extra — and it is not covered by release
+acceptance. It is the one Host whose deploy root is **project-relative**
+(`.github/`) rather than a machine-global config root.
 
 Gate coverage differs by host: Claude Code and Codex CLI get the full gate set
-through native hooks; OpenCode and Copilot fall back to the git-hook layer,
-which covers the commit and push gates but not the pre-tool ones
-(`auth_gate`, `secrets_gate`, `tamper_guard`, `spec_guard`).
+through native hooks; OpenCode falls back to the git-hook layer, which covers the
+commit and push gates but not the pre-tool ones (`auth_gate`, `secrets_gate`,
+`tamper_guard`, `spec_guard`).
 
 ### What it looks like
 
