@@ -1,5 +1,75 @@
 # Changelog
 
+## [4.1.0] - 未发布
+
+> 发布日期在发布时填入。本节内容与
+> `docs/architecture/governance/migration-support-scope-4.1.md` 同源，那份更详细。
+
+**增强旧项目兼容诊断与安全迁移能力；有歧义的项目策略需要明确裁定。**
+
+这一版**不承诺**两件事，且是刻意的：不承诺所有老项目自动迁移（有多份副本而无法
+裁决的项目，PactKit 不会替你选一份）；不承诺行为完全不变（见下）。判据是
+**支持范围内有证据，范围外有明确提示，任何情况下不静默改变项目策略**。
+
+### 升级编排（MUST 读）
+
+**四包共享 major.minor，lockstep 发布。** 两条独立的锁表达同一件事：adapter 钉
+`pactkit>=4.1.0,<4.2.0`，且 `doctor.check_adapter_compat` 要求
+`_major_minor(adapter) == _major_minor(core)`。core 4.1.0 与 4.0.0 的 adapter 是
+明确不允许的组合，部署会被 skew guard 拒绝。
+
+**升级 CLI 会立即影响旧 hook，但不会自动完成项目迁移。** 旧项目的 Git wrapper
+执行的是 `PATH` 上的 `pactkit`，所以升级 pip/pipx 后下一次 `git push` 就跑新版本；
+但配置形态、hook 链、`.gitignore` 都不会被自动改写——项目侧要跑
+`pactkit commit-gate --install --migrate` 才换链。
+
+**升级前核对三样，不能只看版本号**：版本（`pactkit version`）、安装来源
+（`pip show` / `direct_url.json`）、产物完整 sha256。本机历史上存在多个不同构建
+都报同一个版本号的情况。
+
+**⚠️ 反向风险**：本机 CLI 落后于项目要求时，`pactkit update` 会用**旧模板**重写
+受管文件（实测 2026-09-28：core 3.0.4 的 CLI 对 4.0.0 的项目跑 update，静默改回
+tracked 的 `.github/workflows/pactkit.yml`）。
+
+### Fixed
+
+- **Copilot 适配器的 `-C` 目标失效**：`pactkit -C <别的项目> update --format
+  copilot` 会把 44 个生成物写进**调用方 cwd**。根因是分派器对「签名里没有
+  `project_root`」的 deployer 静默丢弃该参数，而 copilot 的部署根是项目相对的
+  `.github/`，于是退回 `Path.cwd()`。现在**明确拒绝**而不是丢弃；三个 adapter 都
+  接收 `project_root`/`no_redetect`，并用项目根做每一次项目相对读写。
+- **`doctor` 的逐键分歧重复输出**：同一批键在文本里出现两次（加载期警告 + 逐条
+  列表），真实老结构项目上 17 行。文本收敛为一次摘要，**详情移入
+  `doctor --json` 的 `config_source.divergence`**（此前 JSON 里根本没有这些，
+  所以只删文本就是丢证据）。
+
+### Added
+
+- **项目形态盘点**：`init`/`update`/`upgrade` 与 `commit-gate --install` 会先打印
+  一张逐入口表——同一形态在不同宿主信号下读到什么——并明确"本次不会替你改配置"。
+  只读、只报、不阻断。
+- **配置三层事实**（发现 / 选择 / 解析）：`doctor --json` 的 `config_source` 给出
+  候选、选定层、解析状态与比较完整性；`multiple`（多份副本无共享层）与
+  "没有配置"是**两个不同的状态**。
+
+### 迁移支持范围
+
+可兼容读取的范围、多份副本时的选择规则、`update` 的保护范围、以及**未覆盖项**，
+见 `docs/architecture/governance/migration-support-scope-4.1.md`。要点：
+
+- 无共享层 + **恰好一份**宿主副本 ⇒ 兼容读（身份
+  `legacy-single-host-no-shared-v1`，**5.0.0 到期**）；**两份以上 ⇒ 一份都不选**，
+  有效值全部来自默认；
+- 宿主信号来自**环境变量**，CI 与 git hook **会继承启动者的环境**——从 AI 终端里
+  起的 `git commit` 带着 `CLAUDECODE=1`，读的是 `.claude/` 那份；
+- `update` 只在三种情况覆盖已存在文件（不存在 / 逐字节相同 / 清单证明未改动），
+  其余一律视为用户所有。
+
+### 未验证
+
+Python 3.10 已在 3.10.16 上实测（7721 passed / 0 failed），但**多版本矩阵只覆盖
+3.10 与 3.14**；PyPI 索引安装路径与 extras 留作发布后验收。
+
 ## [4.0.0] - 2026-09-26
 
 **Kernelization + Repository Coherence。** 自 3.1.0 起的契约边界变更，全部由

@@ -12,7 +12,7 @@
 
 > **PactKit** (Pact 契约 + Kit) is a lightweight dev-enablement scaffold: it gives AI coding assistants the standards, specs and methods of a disciplined engineering workflow, without getting in the way. Ordinary questions and ordinary coding never activate the workflow — you opt in per task. There is no admin plane, no central control, and nothing that cannot be uninstalled.
 >
-> Deterministic operations run as code, not prompts (CODE is the Law). Decisions are grounded in data, not memory (Data is the Truth). 57 CLI subcommands, 9 specialized agents, 12 commands, 25 skills, and a Plan-Act-Check-Done lifecycle you invoke when you want it. One `pip install` deploys to all 4 supported IDEs (adapters are opt-in extras).
+> Deterministic operations run as code, not prompts (CODE is the Law). Decisions are grounded in data, not memory (Data is the Truth). 67 CLI subcommands, 9 specialized agents, 12 commands, 25 skills, and a Plan-Act-Check-Done lifecycle you invoke when you want it. One `pip install` deploys to all 4 supported IDEs (adapters are opt-in extras).
 
 ### Supported AI Tools
 
@@ -269,7 +269,7 @@ skills, so `/project-plan` and `pactkit-visualize` deploy the same way) plus the
 
 ## CLI Subcommands
 
-PactKit ships 57 deterministic CLI subcommands — operations that were previously delegated to AI prompts are now enforced in Python code (the "C" in P.A.C.T.):
+PactKit ships 67 deterministic CLI subcommands — operations that were previously delegated to AI prompts are now enforced in Python code (the "C" in P.A.C.T.):
 
 | Command | Purpose |
 |---------|---------|
@@ -278,38 +278,65 @@ PactKit ships 57 deterministic CLI subcommands — operations that were previous
 | `pactkit upgrade` | Upgrade with format selection |
 | `pactkit adopt` | Create a minimal versioned contract for the current project |
 | `pactkit reconcile` | Preview or apply safe project-schema migrations |
+| `pactkit accept-candidates` | Accept `.pactkit-new` deployment candidates and record ownership digests |
+| `pactkit config reconcile` | Preview (default) or apply config migrations — promotes a legacy single-host config to a shared root |
+| `pactkit migrate` | Run the explicit legacy migrations (idempotent; `--dry-run` to preview) |
+| `pactkit ownership adopt --path PATH` | Preview (default) or record PATH's current digest as the approved baseline |
 | `pactkit project-preflight` | Check adoption and compatibility before governed work |
 | `pactkit version` | Show installed version |
 | `pactkit schema` | Print document schemas |
 | `pactkit doctor` | Diagnose project health (HLD drift, board, config, deployment content parity, adapter skew) |
+| `pactkit audit` | H1-H7 AI Readiness Assessment |
+| `pactkit report` | Generate unified HTML architecture dashboard |
+| `pactkit observe` | Collect runtime observability signals |
 | `pactkit spec-lint` | Validate spec structure (E001-E010, W001-W011; incl. dependency surface checks) |
+| `pactkit spec-preflight` | Load Spec implementation inputs and write a verified receipt |
+| `pactkit rules-eval` | Evaluate spec-lint rules on the fixed corpus (precision/recall) |
+| `pactkit marker` | Print the declaration line a generated artifact must carry |
 | `pactkit spec-graph` | Story dependency DAG: topological execution waves + file-conflict matrix (`--json` for orchestrators, `--write-graph` for Mermaid) |
 | `pactkit spec-status` | Update spec Status field (Draft/In Progress/Done) |
 | `pactkit guard` | Check project init markers |
 | `pactkit generate-id [--type story\|hotfix\|bug]` | Generate a decentralized time-prefixed item ID |
 | `pactkit context` | Generate `context.md` from project state |
+| `pactkit board` | Manage sharded Story records and the Board projection |
+| `pactkit governance` | Governance records and migrations |
+| `pactkit continuation` | Manage verifiable resumable Act checkpoints |
+| `pactkit workflow` | Manage registered, verifiable workflow runs |
+| `pactkit work-unit` | Execute host-neutral leased workflow units |
 | `pactkit clean` | Remove stack-specific temp artifacts |
+| `pactkit uninstall` | Remove PactKit-deployed files (keeps user-modified ones) |
+| `pactkit garden` | Codebase quality patrol |
 | `pactkit secrets-baseline` | Surgically realign `.secrets.baseline` after a golden refresh changed a recorded digest — updates only the entries whose hash actually changed, preserves key order / indent / no-trailing-newline / `generated_at`, and never accepts a new finding on its own (it reports them for review) |
 | `pactkit lint` | Stack-aware lint with auto-fix and blocking modes |
+| `pactkit guide` | Guide operations (`show <name>` loads one engineering guide) |
 | `pactkit regression` | Classify changes (SKIP/FULL/IMPACT) |
 | `pactkit test-map` | Map source files to test files |
 | `pactkit coverage-gate` | Enforce 3-tier coverage thresholds (80/50/block) |
 | `pactkit visualize` | Render MMD diagrams **from the Codegraph index** (`--mode file\|class\|call\|module`, `--lazy`) |
 | `pactkit query` | Codegraph queries (the single source): `--callers`, `--callees`, `--chain`, `--impact`, `--explore` |
+| `pactkit interface-summary` | Output interface summary (signatures only) |
 | `pactkit lesson-append` | Append lesson with specificity check and dedup |
 | `pactkit invariants-refresh` | Update test count invariant in rules.md |
 | `pactkit sec-scope` | Detect security scope for changed files |
 | `pactkit backfill-release` | Replace Release: TBD/Unreleased in completed specs |
 | `pactkit evidence-measure` | Measure scope integrity (R8) and negative control (R9) — the explicit half of the ADR-0006 evidence touchpoint |
+| `pactkit contract-receipt` | Record a DECLARED outcome (cannot alone produce `verified`) |
+| `pactkit contract-run` | Run a contract's verification test and sign the receipt |
+| `pactkit contract-suggest` | Report selector/contract differences (read-only; never changes the selection) |
+| `pactkit contract-status` | Read-only contract report for Act/Check/Done (never signs, never changes the selection) |
+| `pactkit contract-admit` | Prepare or sign a contract admission (`--prepare` only stages; `--sign` binds the approved digest) |
+| `pactkit contract-receipts` | List local receipts; `--prune` removes only those with no readable contract id |
 | `pactkit issue-sync` | GitHub issue lifecycle for BUG/HOTFIX items |
 | `pactkit lint-context` | Validate context.md structure |
 | `pactkit lint-lessons` | Validate lessons.md structure |
 | `pactkit lint-testcase` | Validate test case structure |
+| `pactkit lint-adr` | Validate ADR file structure |
 | `pactkit done-verify` | Archive honesty gate: requirement→test evidence chain, checkbox↔case consistency, status machine (blocks `/project-done` on FAIL) |
 | `pactkit commit-gate` | Pre-commit test gate with skip≠pass transparency; stack-aware (pytest/npm test/go test/mvn/gradle); counts via junitxml — immune to repo `addopts` verbosity tricks; `--full` for the complete local suite; `--install --migrate` moves an existing project onto the pre-commit chain |
 | `pactkit gate` | Session context hooks (`--hook session-start/pre-compact`) + external-effect authorization (`pactkit gate <scope> [--ttl-minutes N]`) |
 | `pactkit deps` | External dependency check (`deps check`) and guided install (`deps install`) for node/codegraph/gh |
 | `pactkit schema config` | List every pactkit.yaml key with default, effective value, and source |
+| `pactkit redetect-stack` | Re-detect project stacks and update `pactkit.yaml` |
 | `pactkit sync` | Sync codegraph index |
 
 ### Commit Path Convergence (2.26.0)
