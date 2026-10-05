@@ -30,9 +30,11 @@ Supports **Claude Code**, **Codex** and **OpenCode**.
 through 4.1.0 and that release still installs and works
 (`pip install pactkit-copilot`); it receives no further updates. It was never
 part of the default install — `pip install "pactkit[all]"` does not pull it, and
-there is no `pactkit[copilot]` extra — and it is not covered by release
-acceptance. It is the one Host whose deploy root is **project-relative**
-(`.github/`) rather than a machine-global config root.
+there is no `pactkit[copilot]` extra — it is skipped by the batch deploy
+(`pactkit init` deploys the three supported formats, not this one), and it is
+not covered by release acceptance. Naming it explicitly still works:
+`pactkit init --format copilot` deploys it. It is the one Host whose deploy root
+is **project-relative** (`.github/`) rather than a machine-global config root.
 
 Gate coverage differs by host: Claude Code and Codex CLI get the full gate set
 through native hooks; OpenCode falls back to the git-hook layer, which covers the

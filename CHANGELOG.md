@@ -1,9 +1,47 @@
 # Changelog
 
-## [4.1.0] - 未发布
+## [4.1.1] - 2026-10-04
 
-> 发布日期在发布时填入。本节内容与
+**`--format all` 不再部署已退役的宿主；显式指名不受影响。**
+
+Copilot 退出支持范围是 4.1.0 定下的裁定，这一版把它落到**批量部署路径**上：
+默认批量部署跳过 `compatibility_hosts` 里的宿主，并在输出里明说跳过了谁——
+**静默跳过与「本来就没有」同形**，所以这一条是可见性要求，不是措辞偏好。
+
+判据切在批量路径，是因为两条通道的语义不同：`all` 的承诺是「部署本安装能部署的
+一切」，退役宿主不再属于这个承诺；`--format copilot` 是用户的直接请求，**照常部署**。
+`pactkit-copilot` 4.1.0 仍可安装可用，只是不再更新。
+
+宿主名单此前**内联**写在 manifest 构建器里，现抽为
+`deploy_manifest.PRIMARY_HOSTS` / `COMPATIBILITY_HOSTS`——裁定只有一处落笔，
+manifest 记录它、部署路径读它，而不是各自复述名字。
+
+### 行为变更范围
+
+- **变**：`pactkit init` / `pactkit update` 不带 `--format`（即 `all`）时不再部署
+  Copilot。已部署的 Copilot 产物**不会被删除**，只是不再被批量路径更新。
+- **不变**：`--format copilot` 的部署路径逐字节不变；`prompts/` 未改动，各宿主
+  部署产物内容不变（两个 golden 的重生成仅因版本号内嵌在 `.pactkit-deployed.json`
+  与各宿主 prompt 里）。
+- **兼容**：adapter 的 pin 是 `pactkit>=4.1.0,<4.2.0`，且 `doctor.check_adapter_compat`
+  比对 major.minor——4.1.1 与 4.1.0 的 adapter 是允许的组合，**adapter 无需跟发**。
+
+### 修正
+
+- CHANGELOG 的 4.1.0 段此前标为 `未发布`，而 4.1.0 已于 2026-10-02 发布。一个已
+  发布的版本在 CHANGELOG 里自称未发布，属于「过期工件冒充当前事实」的同族缺陷，
+  随本版一并修正。
+- 退役声明在代码注释与文档里三处写「Copilot still deploys」——批量路径变更后只对
+  显式路径成立，已改正。
+
+## [4.1.0] - 2026-10-02
+
+> 本节内容与
 > `docs/architecture/governance/migration-support-scope-4.1.md` 同源，那份更详细。
+>
+> 日期取自 PyPI 上传时间（2026-10-02T15:30Z）。此前的 `未发布` 是发布时漏填，
+> 于 4.1.1 一并修正——一个已发布的版本在 CHANGELOG 里自称未发布，属于
+> 「过期工件冒充当前事实」的同族缺陷。
 
 **增强旧项目兼容诊断与安全迁移能力；有歧义的项目策略需要明确裁定。**
 
