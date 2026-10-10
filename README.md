@@ -554,7 +554,7 @@ when you want one shared config after all.
 | `telemetry` | object | `enabled: true` | Local-only usage telemetry (`.pactkit/events/`). Set `enabled: false` to stop recording; gate verdicts are unaffected |
 | `exclude` | object | `{}` | Components to exclude (e.g., `exclude.agents: [agent-name]`) |
 | `visualize.graph_provider` | string | (absent) | Code-relation backend. Absent/`auto` = Codegraph (the single source). Explicit `builtin_graph` returns a retirement notice — the MMD-based provider is gone |
-| `ci` | object | `provider: none` | CI/CD pipeline generation (`github`, `gitlab`, `none`). Sub-fields: `runner` (default: `ubuntu-latest`), `language_version` (default: auto per stack), `github_host` (GHE server address), `actions_ref` (GHE actions prefix) |
+| `ci` | object | `provider: none` | CI/CD pipeline generation (`github`, `gitlab`, `none`). Sub-fields: `runner` (default: `ubuntu-latest`), `language_version` (default: auto per stack), `github_host` (GHE server address), `actions_ref` (GHE actions prefix), `push_paths_ignore` (path globs skipped on **push** only — `pull_request` stays unfiltered so required checks never disappear for a doc-only PR) |
 | `issue_tracker` | object | `provider: none` | External issue tracker (`github`, `none`) |
 | `hooks` | object | disabled | Opt-in hook templates (pre-commit, post-test, pre-push) |
 | `lint_blocking` | bool | `false` | Whether lint failures block commits |
@@ -679,7 +679,9 @@ gates × platforms, what each host actually gets), the [credential incident
 response guide](docs/guides/credential-incident-response.md) (pre-2.27.0
 audit-record sweep), and the [release & recovery
 runbook](docs/guides/release-recovery-runbook.md) (second-person drill —
-build, verify, release, recover from the shipped artifacts).
+build, verify, release, recover from the shipped artifacts), plus the
+[verification execution integrity guide](docs/guides/verification-execution-integrity.md)
+(preserving command status and interpreting gate evidence).
 
 ## Contributing
 

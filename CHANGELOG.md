@@ -1,5 +1,73 @@
 # Changelog
 
+## [4.1.2] - 2026-10-10
+
+**验证必须「完整」，不只是「没有失败」；验证回执必须绑定执行它的那个环境。**
+
+这一版把两件此前同形的事分开：**没跑**，与**跑了但没验证到**。Story 做完最后一个
+task 此前直接进 `Done`，`done-verify` 的 WARN 只是「打印后继续」——两者都让「没有
+失败」冒充了「验证过」。现在 In Progress 与 Done 之间多一个 `Verifying`：做完最后
+一个 task 只进入 `Verifying`，`done-verify` 全项 PASS 是唯一的常规出口，WARN 一律
+算 **INCOMPLETE**（非零退出），空结果集不算通过，手动搬 board 绕不过去。
+
+另一半在 commit-gate 的回执上。此前它记的是一个绿/红标签；现在它记**这次执行**：
+运行前后的项目输入指纹、Git 身份（HEAD / symbolic-ref / index / dirty）、单调时钟
+与墙钟的差值（>1s 标记 untrusted，暂停或时钟调整可见）、结构化的通过/失败/跳过计数
+与跳过位置、与上一次**可比**运行的跳过数变化、以及声明式环境变量的存在性。验证记录
+同时带上**产出它的环境**（已安装发行版、运行时路径变量、测试工具链身份），复用只在
+环境相同时成立。
+
+第三条是 CI：新增 **opt-in** 的 `ci.push_paths_ignore`，让生成的工作流在 push 时忽略
+指定路径；`pull_request` 不过滤——doc-only PR 的必需检查不能因此消失。
+
+### 行为变更范围
+
+- **变（生命周期）**：Story 完成最后一个 task 后进入 `Verifying` 而非 `Done`；
+  `done-verify` 的 WARN 从「打印后继续」改为 **INCOMPLETE 且非零退出**；空检查集不算
+  通过；手动移动 board 不能绕过验证。
+- **变（commit-gate 新增两条阻断）**：运行期间 Git 身份（HEAD / ref / index / dirty）
+  变化或不可读；声明式环境变量存在性变化或不可读。运行期间**目录内容**变化照旧阻断。
+- **变（复用更严）**：项目一旦在 `.env.example` / `.env.sample` / `.env.template`
+  里声明了变量名，缺少该字段的旧记录**不可复用**；验证记录与运行时环境绑定，环境变了
+  同样不复用。两条都让升级后的第一次提交重跑一次测试。
+- **新增（opt-in）**：`ci.push_paths_ignore`。不配置时生成的工作流逐字节不变。
+- **变（部署产物）**：`prompts/` 的改动**进入三个宿主的部署产物**——Done 流程重排与
+  board 段头在 classic / codex / opencode 各自落地。实测（同一 adapter 分别对着 PyPI
+  4.1.1 与本版部署）：classic 与 codex 各 6 个产物变化、opencode 5 个，其中各有 2 个是
+  版本内嵌（`.pactkit-deployed.json` 与宿主顶层 prompt），其余为 prompt 内容——分别是
+  `skills/.pactkit-command-manifest.json`、`skills/pactkit-scaffold/SKILL.md`、
+  `skills/project-done/SKILL.md`、`skills/project-init/SKILL.md`（opencode 为
+  `commands/project-done.md`、`commands/project-init.md`、`skills/pactkit-scaffold/SKILL.md`）。
+  其余产物逐字节不变。
+- **不变**：`--format copilot` 的部署路径不变。
+- **兼容**：adapter pin 是 `pactkit>=4.1.0,<4.2.0`，`doctor.check_adapter_compat` 比对
+  major.minor——**adapter 无需跟发**。但两个 adapter 仓库的
+  `tests/fixtures/host_body_golden.json` 钉的是**精确 core 版本字符串**，必须在 core
+  发布**之后**用 `tests/scripts/refresh_host_body_golden.py` 重生成；顺序反过来
+  （golden 先写 4.1.2 而 PyPI 最新仍是 4.1.1）会照样红。**这次的重生成不是只改版本
+  字段**——codex 4 个、opencode 3 个产物有真实内容变化，按脚本的要求把原因记进提交信息。
+
+### 迁移（MUST 读）
+
+- **升级后第一次提交会重跑测试**：复用判定要求环境一致，旧记录没有该字段。
+- **若你的测试会改动 Git 状态**（`git add` / `git commit` / 切换 HEAD），commit-gate
+  现在会阻断并打印 `[FAIL] Git HEAD, index or dirty state changed …`。这是有意的：
+  那种情况下测试结果不对应当前文件。把这类操作移出被测进程即可。
+- **跳过数变化现在会 WARN**：与上一次可比的运行相比跳过数变化时提示，不阻断。
+- 声明了环境变量却未设置时，gate 打印 `[WARN] declared environment variables missing
+  or empty: …`——模板常含可选项，所以是 WARN 不是 FAIL。
+
+### 修正
+
+- `done-verify` 此前在**空结果集**下返回 0（「没有任何检查失败」被读成通过），
+  WARN 也不影响退出码。两者都改为非零。
+- commit-gate 的「无机器可读计数」文案此前写成「non-Python runners report exit status
+  only」——Python runner 同样可能没有计数通道，现改为指向 per-runner 结果，并在回执里
+  用 `null` 表示未知计数，而不是编造 0。
+- 新增 [验证执行完整性指南](docs/guides/verification-execution-integrity.md)：管道会吞
+  退出码（`pytest … | tail`、`gh run watch --exit-status`），指南给出 bash/zsh 两种
+  保留原状态的写法。
+
 ## [4.1.1] - 2026-10-04
 
 **`--format all` 不再部署已退役的宿主；显式指名不受影响。**
