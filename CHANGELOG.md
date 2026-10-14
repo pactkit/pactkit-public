@@ -1,5 +1,36 @@
 # Changelog
 
+## [4.1.3] - 2026-10-14
+
+**`pactkit test-map` 认识 JS/ESM；merge-semantics 文档有了通用写入器；验证输入指纹不再被工具缓存误判。**
+
+- **test-map（#21）**：node profile 此前只认 `.ts` + `__tests__/{module}.test.ts`，`.js` 源与
+  `tests/*.test.js` 全部落空，CLI 还把空映射报成 exit 0。现在接受 `.js/.mjs/.cjs/.jsx/.ts/.tsx`，
+  候选有界（源目录、其 `__tests__/`、根 `tests/`、`__tests__/` 下的 `<module>.test|spec.<ext>`），
+  显式给出的测试文件映射自身，`tests/` 下的 helper 不因位置被当成测试目标；结果三态
+  `mapped / no-match / unavailable`（不可读 ≠ 不匹配），空映射的理由显式声明它不是「没有测试」
+  的证明；CLI 新增 `--json`，退出码 0/1/2。新增 `docs/guides/test-mapping.md`。
+- **`upsert_managed_block`（`pactkit.managed_docs`）**：merge-semantics 文档（`CLAUDE.md` 与项目级
+  `AGENTS.md`）的通用写入器——只更新 `<!-- pactkit:start/end -->` 区块；无标记的旧文件按**字节**
+  保留并追加；标记重复/残缺或区块被手改则保留并报诊断（ownership 门禁 + `pactkit ownership
+  adopt` 出口）；内容未变不重写；写前备份。首次追加即建立 ownership，模板升级不再要求手工
+  adopt。classic 与 codex 共用同一实现。
+- **`AGENTS.md` 声明为 `managed_block` 工件**（`PROJECT_DEPLOY_ARTIFACTS`），ownership 记录落
+  `.pactkit/artifacts.json`。
+- **commit-gate**：`.codegraph/`（机器本地工具缓存）移出验证输入指纹——doctor 的 codegraph 探针
+  会碰其 ctime 而内容不变，此前使含该测试的验证运行恒判漂移。
+- **context 交接**：checkpoint 三态（已验证 / 不可读 / 不存在）不再把读取失败折叠成「没有」；
+  无 checkpoint 时只保留 caller handover；新格式 Story ID 不再被正则截断（此前所有新格式 Story
+  的 checkpoint 都读不到）。
+- **canonical IR**：EXECUTE 探针补上新词汇（`run <checks>` 的直接宾语）；一条已静默失效的负对照
+  恢复见证力。
+- **提示词刷新（PROMPT-01..06）**：角色与命令统一按 scoped evidence 报告（PASS/PARTIAL/FAIL/
+  UNAVAILABLE + 未验证项），Act 按结论所需事实决定读取深度，Debug 去掉固定假设与概率的伪精确，
+  架构决策去掉重复率硬门槛，委派与交接自包含且不继承授权。
+
+验证：CI `tests/unit` 7727 passed / 114 skipped；`pactkit test-map` 的 JS/ESM 验收与变异证据见
+issue #21；`verification inputs` 的四形态实现与证据见 issue #17。
+
 ## [4.1.2] - 2026-10-10
 
 **验证必须「完整」，不只是「没有失败」；验证回执必须绑定执行它的那个环境。**
