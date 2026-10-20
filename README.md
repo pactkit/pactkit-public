@@ -26,13 +26,15 @@ Supports **Claude Code**, **Codex** and **OpenCode**.
 
 > `pactkit init` deploys all three formats at once. Use `--format <name>` to target a single one.
 
-**GitHub Copilot is out of the supported scope.** `pactkit-copilot` was published
-through 4.1.0 and that release still installs and works
-(`pip install pactkit-copilot`); it receives no further updates. It was never
-part of the default install — `pip install "pactkit[all]"` does not pull it, and
-there is no `pactkit[copilot]` extra — it is skipped by the batch deploy
-(`pactkit init` deploys the three supported formats, not this one), and it is
-not covered by release acceptance. Naming it explicitly still works:
+**GitHub Copilot is a compatibility host.** `pactkit-copilot` is published in
+step with core again as of 4.2.0 (`pip install pactkit-copilot`). Publication
+resumed; the host class did not change. It is still outside the default install —
+`pip install "pactkit[all]"` does not pull it, and there is no
+`pactkit[copilot]` extra — and it is still skipped by the batch deploy
+(`pactkit init` deploys the three primary formats, not this one). Its releases do
+pass the same gate as the others: the repository carries its own
+release-acceptance workflow as of 4.2.0, and its tag will not publish until that
+acceptance has passed for the same commit. Naming it explicitly works:
 `pactkit init --format copilot` deploys it. It is the one Host whose deploy root
 is **project-relative** (`.github/`) rather than a machine-global config root.
 

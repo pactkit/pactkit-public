@@ -1,5 +1,55 @@
 # Changelog
 
+## [4.2.0] - 2026-10-19
+
+**判定与交付解耦；任务定义单一源；Done 的证据跨语言且说得出自己的边界；测试套件本地 −121s。**
+
+- **判定分级（ADR-0011）**：`done-verify` 的判定只治理**完成声明**——`FAIL`（必要证据缺失）
+  保持 `verifying`；`WARN`（启发式/降级检查）不阻断完成但 MUST 逐条披露；两者都不阻断
+  commit（commit 由自身门禁治理）。三入口（Done 提示词 / `done-verify` / commit gate）
+  此前对 WARN 给出三个不同答案，现按同一条规则回答。
+- **任务定义单一源（ADR-0012）**：`ci.install_cmd` / `lint_command` / `test_cmd` / `cwd`
+  成为唯一事实源；声明接管（shell 语义、根内限定），未声明走语言预设，**未识别栈
+  fail-closed**（不再回落 Python）；CI 生成物按栈渲染（非 Python 不再披 setup-python/venv
+  外壳）；Node 预设 `npx jest` → `npm test`（与本地同源）。
+- **Done 证据跨语言**：声明路径的见证语义分档——`.py` 保持「声明即必须存在」，非 `.py`
+  采用 witness-if-exists（存在即见证，缺席只披露）；非 Python 变更产出 `R4 coverage`
+  WARN，不再被静默读成「no source changes to verify」。4.1.3 的 JS/ESM `test-map`
+  能力由此到达 Done 层。
+- **声明 vs 提及**：路径的义务被识别为四类——必须创建（存在）/ 必须删除（不存在）/
+  不得创建（**本轮是否新增**）/ 不得修改（相对基线），各有各的验收含义；示例、假设、
+  反例不作声明；无法可靠区分的转**显式未决项**。语料复算：`.py` 误报 3 → 0，
+  候选集合无新增。
+- **coverage-gate 修复**：探针失败不再被渲染成 `coverage: 0`——无可解析报告 ⇒ 测量失败
+  （`files: []`、`overall` 仍 `block`、原因指向仪器）；未测量文件 `coverage: null`；
+  有效零与两个阈值两侧照常判定。
+- **测试耗时**：`--collect-only` 由每文件一进程改为分批（75.75s → 13.35s）；关联测试在
+  方法作用域内复用一次解析（~55s → 23.21s）。本地全套 427.93s → 306.84s；CI Test 步骤
+  单次对照 −30.4%。**未减少任何验证覆盖**。
+- **Copilot 恢复发版**：`pactkit-copilot` 自本版起**与 core 同步发版**，并补上
+  release-acceptance workflow——此前它是唯一「tag 一推、test 一绿就发」的 adapter，
+  现在与 core/codex/opencode 一样，必须等同一 commit 的验收通过才发。**宿主类别没变**
+  ——仍不在默认安装里（`pactkit[all]` 不拉它、无 `pactkit[copilot]` extra）、批量部署
+  仍跳过它；`pactkit init --format copilot` 照常部署。发版恢复改变的是「发出去什么」
+  与「发之前验过什么」，不是「承诺什么」。
+
+### 升级（MUST 读）
+
+**装了 adapter 的必须与 core 同一条命令升级。** adapter 的 pin 由
+`pactkit>=4.1.0,<4.2.0` 移到 `>=4.2.0,<4.3.0`，`doctor.check_adapter_compat` 另要求
+major.minor 相等——单跑 `pip install -U pactkit` 会把 adapter 留在 4.1.x，随后的部署
+被 skew guard 拒绝（报的是环境缺陷，不是能力缺失）：
+
+```bash
+pip install -U "pactkit[codex,opencode]"     # 按你实际装的 extra 写
+```
+
+**未识别栈现在 fail-closed（ADR-0012）。** 此前 `ci` 遇到不认识的栈会回落 Python
+预设并照常生成，现在**拒绝并指出栈名**。声明过非 Python 栈、又依赖旧回落行为的项目，
+升级后第一次 `pactkit ci` 会从"生成成功"变成"明确拒绝"——这是有意的：生成一份
+用错工具链的 CI 比拒绝生成更贵。
+
+
 ## [4.1.3] - 2026-10-14
 
 **`pactkit test-map` 认识 JS/ESM；merge-semantics 文档有了通用写入器；验证输入指纹不再被工具缓存误判。**
