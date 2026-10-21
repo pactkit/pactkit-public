@@ -1,5 +1,41 @@
 # Changelog
 
+## [4.3.0] - 2026-10-20
+
+**漂移 run 的审计终态；义务判定与门禁降级修复；CI cwd 引用安全。**
+
+### Added
+
+- **`pactkit workflow supersede <run-id>`（ADR-0013）**：在审计、权限与证据约束下，
+  把发生 `artifact_drift` 的非健康 run 标记为 `superseded` 终态并释放 Story 绑定，
+  使新的完整验证可以启动。新旧两个 run store（`.pactkit/workflow-runs/` 与
+  `.pactkit/continuations/runs/`）共用一个终态写入器 + 两个 schema 适配器。
+  - 新增最小权限授权 scope `work-unit`；无有效窗口拒绝且零写入。
+  - 执行前重算 drift 与证据覆盖率；不完整覆盖需显式 `--accept-incomplete`，
+    空指纹清单 fail closed；generic 可 revalidate 的漂移会被拒绝并指回
+    `revalidate-artifacts`。
+  - append-only：保留 run 文件与历史，写入 `status=superseded`、`superseded_by`、
+    原因、前后指纹、覆盖率、actor 与 authorization，并追加 `run_superseded` 事件。
+  - 可选 `--successor` 建立双向链接；幂等，不同 payload 冲突失败。
+  - 消费方把 `superseded` 当作终态：`finish_guard` 返回 `superseded`（exit 2），
+    `bind_story` / `_find` / `_generic_act_resolution` 不再视为活跃或 ambiguous；
+    两个引擎都拒绝再次修改已 superseded 的 run。
+
+### Fixed
+
+- **done-verify 义务判定**：表格行不再把 Action 列的动词绑到 File 列路径；示例语境
+  优先于整行回退；否定式删除映射为 `keep` 而非 `delete`；路径 token 不再自供动词；
+  `Batch` 只匹配延后形态；`『』` 与多引号按外层片段逐个绑定；无 heading-MUST 时
+  仍执行义务检查；git 不可观测与空基线改为披露而非 PASS。
+- **commit gate**：无 plan 时先读声明问题（`ci.test_cmd` 空值不再被泛化消息掩盖）；
+  resolved cwd 与未 resolve root 不再因 `relative_to` 抛错而静默放行。
+- **deployer**：GitLab test job 遵守 `ci.cwd`；部分 `custom` 声明不再以 traceback
+  逃出部署。
+- **coverage gate**：pytest stderr 末行在持久化前经 `secrets_gate.redact_command`
+  脱敏。
+- **CI 渲染器**：`ci.cwd` 在 GitLab 中以 shell 参数引用、在 GitHub 中以 YAML 安全
+  标量输出；简单值保持原有渲染。
+
 ## [4.2.0] - 2026-10-19
 
 **判定与交付解耦；任务定义单一源；Done 的证据跨语言且说得出自己的边界；测试套件本地 −121s。**
