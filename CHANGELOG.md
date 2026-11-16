@@ -1,5 +1,62 @@
 # Changelog
 
+## [4.4.1] - 2026-11-13
+
+**写入可信边界补丁：配置同步不再静默、文件权限保留、查询截断可机器识别、`-C` 上下文统一、死代码索引状态显式。**
+
+### Migration
+
+行为变化，无需修改调用方：
+
+- `atomic_write` 覆盖既有文件时保留原 mode；新建文件仍遵循 umask。依赖固定 `0644` 重建的脚本需显式 `chmod`。
+- `sync_project_config` 新增 `source-tree`、`locked` 状态；命令前的配置自动同步失败现在会向 stderr 告警。
+- `garden --dead-code --write` 在 CodeGraph 索引非 `ok` 时拒绝写入并以非零退出。
+- `query --explore/--context/--node` 文本结果新增 `text_length` / `text_truncated`；超过预算时 `ProviderDecision.truncated` 为 true。
+- `-C` 下的 `generate-id` / `marker` / `query` 统一读取目标项目根与配置。
+
+### Fixed
+
+- 配置自动同步不再把 `0600` 的 `pactkit.yaml` 改成 `0644`：`atomic_write` 在覆盖既有文件时保留原 mode，并在替换前 `fsync`。
+- 源码树即使已带落后版本戳也不会被自动同步写入；`stamp_config()` 显式路径行为不变。
+- quoted `pactkit_version` 原位替换，不再追加第二个 YAML key；重复键与 flow mapping 返回 `refused` 且文件逐字节不变。
+- 配置同步的读-改-写过程加排他锁，超时返回 `locked`，并发更新不再被旧快照覆盖。
+- `query` 的文本结果超过 4000 字符时标记 `truncated`，人类输出报告字符数而非包装行数。
+- `-C` 指定项目时 `generate-id` / `marker` / `query` 使用目标项目根与配置，不再读取当前目录。
+- `garden --dead-code` 区分索引 `ok` / `unavailable` / `invalid` / `stale` / `unknown`；非 `ok` 不写 triage，未完成外部验证的 internal candidate 显式标注。
+
+## [4.4.0] - 2026-11-06
+
+**项目内默认工作流、配置随版本自动同步、CLI 分发表重构与死代码 triage。**
+
+### Added
+
+- **配置随版本自动同步**（`STORY-slim-202611063f2bf6369619`）：任意项目命令前，
+  若共享 `pactkit.yaml` 的 `pactkit_version` 落后于安装版本，只增不改地补齐
+  缺失的非 optional 键并更新版本戳；legacy 配置仅补版本戳；不碰 `enforcement`、
+  宿主层与 PactKit 自身源码树；`PACTKIT_NO_CONFIG_SYNC=1` 可关闭。
+- **`pactkit garden --dead-code`**：零入边候选按 public-surface / external-used /
+  tests-only / dynamic-dispatch / internal-candidate 分类，报告显式禁止批量删除。
+- **codegraph 查询增强**：`--explore/--context/--node/--search/--files` 与
+  `--depth 1..6`（默认 5）、`status --json`、结果预算与截断提示。
+- **Clarify 策略单一来源**与 greenfield 强制触发（`--explore` 三分法指引）。
+
+### Changed
+
+- **项目内默认走工作流**（`STORY-slim-202611069febef29475a`）：有共享
+  `pactkit.yaml` 时，code/specs/board/config 变更默认走
+  clarify → plan → act → check → done；普通问答与 review 不进入 PDCA，
+  非 PactKit 项目仍为 opt-in。
+- **CLI 分发表重构**：`_main` 从 3,480 行降为 137 行 bootstrap；argparse 拆为
+  67 个按命令 builder，处理器集中在 `commands/handlers.py`；help 金标字节不变。
+- 适配器工作流：adapter 版本窗口对齐 core 4.4.0（`>=4.4.0,<4.5.0`）。
+
+### Fixed
+
+- `pactkit query` 纯文本结果的截断提示；`--node` 帮助缺失。
+- 门禁工具名拼写与未知名工具不再绕过（`#22`）；skill 形命令 frontmatter name（`#23`）。
+- 重构后 host-dispatch 分类、canonical IR 采样、C006 与 inventory 跟随新位置。
+- 架构图 HLD 节点与 13 条 missing spec / 8 条 orphaned spec 的历史账。
+
 ## [4.3.0] - 2026-10-20
 
 **漂移 run 的审计终态；义务判定与门禁降级修复；CI cwd 引用安全。**
