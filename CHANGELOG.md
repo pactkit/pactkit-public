@@ -1,5 +1,50 @@
 # Changelog
 
+## [4.4.2] - 2026-11-24
+
+**评审驱动加固：写入可信边界、契约回执证据链、统一规则装配、可执行 Spec 与证据化完成判定。**
+
+### 写入与宿主保护
+
+- Codex `apply_patch` 接入保护检查；core 写入意图行为守卫（READ/preview 零写入快照泛化）。
+- 排他锁统一到 `exclusive_file_lock`；Story/验证记录/索引读改写加锁。
+- 全局 `AGENTS.md` 受管区块合并保留用户内容；旧版升级迁移消除双份规则（byte-exact 确认，用户改动保留）。
+- OpenCode 命令转换仅限 PactKit 管理文件，不改用户自建命令。
+- `_rules/README.md` 纳入部署声明面，关闭跨 adapter 部署面⊄声明面类。
+
+### 查询与契约证据
+
+- 默认查询真正只读：移除 stale→auto-sync 写锁，过期诚实报告（人读面 stderr 提示 + `pactkit sync` 引导）。
+- 契约回执可信：`observe` 按完整 nodeid 核对 junit testcase（marker 筛掉/未收集拒签），进程 exit0 才签 passed。
+- `contract-resign` 变更收集：显式第一父 diff / root 空树 / NUL+quotepath（合并/首次/中文路径正确）。
+- Done/Release 共用重签路径；候选 Core wheel 跨仓安装/升级验收 + 真实升级场景（零凭据）。
+
+### 统一规则装配与可执行 Spec
+
+- Core 统一命令规则选择（`_get_command_rules`），Codex honor `command_rules` 覆盖；条件正文按 enabled 过滤消悬空引用。
+- Plan 交付可执行方案：风险深度引导、关键步骤四字段（入口/对应AC/验证/预期）、`## Key Acceptance Evidence` 声明段。
+- spec-lint W015 与 done-verify 共享 KA 解析，区分无声明（历史延续）与格式无效（FAIL）。
+
+### 证据化完成判定
+
+- 关键 AC 完成结论追溯实际运行证据：`measure_test_run` 实跑绑定 nodeid/结果/工作树指纹/运行环境。
+- `done_verify.check_key_acceptance_evidence`：跳过/筛掉/失败/运行中改动/环境或 pytest 选项变化/证据损坏（含根结构）→ FAIL 留 Verifying；无声明历史 Spec 延续既有判定。
+- 多 AC 按 nodeid 深合并保留各自版本；`done-verify --check-only` 只读入口（Check 复用判定，不写 Story/文件）。
+
+### 自动化与验收
+
+- DSH Node 测试入 CI + `index.js` 宿主注册/拦截见证（本地 stub 绕过未发布 peer dep）。
+- Adapter Conformance Suite 增 C016–C019（只读 review/覆盖禁用/新风险/假绿+升级）。
+- 核心 CI 迁 GitHub 托管 runner。
+
+### Migration
+
+行为变化，无需修改调用方：
+
+- 默认 `pactkit query` 索引过期时不再自动刷新，改为 stderr 提示 + 退出 0；需刷新跑 `pactkit sync`。
+- 声明关键验收的 Spec（`## Key Acceptance Evidence`）须由实际运行证据完成；跳过/过期/损坏证据留 Verifying。无声明的历史 Spec 不受影响。
+- `done-verify --check-only` 为只读 Check 入口，不推进 Story 状态。
+
 ## [4.4.1] - 2026-11-13
 
 **写入可信边界补丁：配置同步不再静默、文件权限保留、查询截断可机器识别、`-C` 上下文统一、死代码索引状态显式。**

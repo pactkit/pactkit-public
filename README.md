@@ -12,7 +12,7 @@
 
 > **PactKit** (Pact 契约 + Kit) is a lightweight dev-enablement scaffold: it gives AI coding assistants the standards, specs and methods of a disciplined engineering workflow, without getting in the way. Ordinary questions and ordinary coding never activate the workflow — you opt in per task. There is no admin plane, no central control, and nothing that cannot be uninstalled.
 >
-> Deterministic operations run as code, not prompts (CODE is the Law). Decisions are grounded in data, not memory (Data is the Truth). 67 CLI subcommands, 9 specialized agents, 12 commands, 25 skills, and a Plan-Act-Check-Done lifecycle you invoke when you want it. One `pip install` deploys to Claude Code, Codex and OpenCode (adapters are opt-in extras).
+> Deterministic operations run as code, not prompts (CODE is the Law). Decisions are grounded in data, not memory (Data is the Truth). 68 CLI subcommands, 9 specialized agents, 12 commands, 25 skills, and a Plan-Act-Check-Done lifecycle you invoke when you want it. One `pip install` deploys to Claude Code, Codex and OpenCode (adapters are opt-in extras).
 
 ### Supported AI Tools
 
@@ -282,7 +282,7 @@ skills, so `/project-plan` and `pactkit-visualize` deploy the same way) plus the
 
 ## CLI Subcommands
 
-PactKit ships 67 deterministic CLI subcommands — operations that were previously delegated to AI prompts are now enforced in Python code (the "C" in P.A.C.T.):
+PactKit ships 68 deterministic CLI subcommands — operations that were previously delegated to AI prompts are now enforced in Python code (the "C" in P.A.C.T.):
 
 | Command | Purpose |
 |---------|---------|
@@ -335,6 +335,7 @@ PactKit ships 67 deterministic CLI subcommands — operations that were previous
 | `pactkit evidence-measure` | Measure scope integrity (R8) and negative control (R9) — the explicit half of the ADR-0006 evidence touchpoint |
 | `pactkit contract-receipt` | Record a DECLARED outcome (cannot alone produce `verified`) |
 | `pactkit contract-run` | Run a contract's verification test and sign the receipt |
+| `pactkit contract-resign` | Re-sign triggered pilot contracts at current HEAD (done/release post-commit) |
 | `pactkit contract-suggest` | Report selector/contract differences (read-only; never changes the selection) |
 | `pactkit contract-status` | Read-only contract report for Act/Check/Done (never signs, never changes the selection) |
 | `pactkit contract-admit` | Prepare or sign a contract admission (`--prepare` only stages; `--sign` binds the approved digest) |

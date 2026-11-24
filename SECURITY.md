@@ -4,10 +4,9 @@
 
 | Version | Supported          |
 |---------|--------------------|
+| 4.4.x   | :white_check_mark: |
 | 4.3.x   | :white_check_mark: |
-| 4.2.x   | :white_check_mark: |
-| 4.1.x   | :white_check_mark: |
-| < 4.1   | :x:                |
+| < 4.3   | :x:                |
 
 We provide security fixes for the current and previous minor release. Users on
 older versions should upgrade — the version is reported by `pactkit version`,
